@@ -1,8 +1,11 @@
 package com.jh.alwaysonglyph.service
 
 import android.app.Service
+import android.content.BroadcastReceiver
 import android.content.ComponentName
+import android.content.Context
 import android.content.Intent
+import android.content.IntentFilter
 import android.os.Bundle
 import android.os.Handler
 import android.os.IBinder
@@ -13,7 +16,6 @@ import android.util.Log
 import com.jh.alwaysonglyph.receiver.BatteryStateReceiver
 import com.jh.alwaysonglyph.renderer.MatrixCanvasRenderer
 import com.jh.alwaysonglyph.prefs.ClockPreferences
-import com.nothing.ketchum.Common
 import com.nothing.ketchum.Glyph
 import com.nothing.ketchum.GlyphMatrixFrame
 import com.nothing.ketchum.GlyphMatrixManager
@@ -43,6 +45,24 @@ class GlyphClockToyService : Service() {
 
     private val serviceMessenger = Messenger(serviceHandler)
 
+    private val screenStateReceiver = object : BroadcastReceiver() {
+        override fun onReceive(context: Context?, intent: Intent?) {
+            when (intent?.action) {
+                Intent.ACTION_SCREEN_ON, Intent.ACTION_USER_PRESENT -> turnOffMatrix()
+            }
+        }
+    }
+
+    override fun onCreate() {
+        super.onCreate()
+        registerScreenStateReceiver()
+    }
+
+    override fun onDestroy() {
+        unregisterScreenStateReceiver()
+        super.onDestroy()
+    }
+
     override fun onBind(intent: Intent?): IBinder? {
         Log.d(TAG, "onBind called")
         initGlyphManager()
@@ -52,6 +72,7 @@ class GlyphClockToyService : Service() {
     override fun onUnbind(intent: Intent?): Boolean {
         Log.d(TAG, "onUnbind called")
         try {
+            turnOffMatrix()
             glyphMatrixManager?.unInit()
         } catch (e: Exception) {
             Log.e(TAG, "Error during unInit", e)
@@ -59,6 +80,34 @@ class GlyphClockToyService : Service() {
         glyphMatrixManager = null
         isConnected = false
         return false
+    }
+
+    private fun registerScreenStateReceiver() {
+        val filter = IntentFilter().apply {
+            addAction(Intent.ACTION_SCREEN_ON)
+            addAction(Intent.ACTION_USER_PRESENT)
+        }
+        registerReceiver(screenStateReceiver, filter, Context.RECEIVER_NOT_EXPORTED)
+        Log.d(TAG, "Screen state receiver registered")
+    }
+
+    private fun unregisterScreenStateReceiver() {
+        try {
+            unregisterReceiver(screenStateReceiver)
+        } catch (e: Exception) {
+            Log.e(TAG, "Error unregistering screen state receiver", e)
+        }
+    }
+
+    private fun turnOffMatrix() {
+        val manager = glyphMatrixManager ?: return
+        if (!isConnected) return
+        try {
+            manager.turnOff()
+            Log.d(TAG, "Matrix turned off (all black)")
+        } catch (e: Exception) {
+            Log.e(TAG, "Failed to turn off matrix", e)
+        }
     }
 
     private fun initGlyphManager() {
@@ -72,12 +121,7 @@ class GlyphClockToyService : Service() {
                 Log.d(TAG, "GlyphMatrixManager connected: $name")
                 isConnected = true
 
-                val matrixLength = Common.getDeviceMatrixLength()
-                val targetDevice = if (matrixLength <= 13) {
-                    Glyph.DEVICE_25111p
-                } else {
-                    Glyph.DEVICE_23112
-                }
+                val targetDevice = Glyph.DEVICE_23112
 
                 try {
                     manager.register(targetDevice)
@@ -99,14 +143,12 @@ class GlyphClockToyService : Service() {
         if (!isConnected) return
 
         try {
-            val matrixLength = Common.getDeviceMatrixLength()
             val time = LocalTime.now()
             val batteryLevel = BatteryStateReceiver.getBatteryPercentage(applicationContext)
             val unreadCount = UnreadNotificationListenerService.getUnreadCount()
 
             val use24Hour = ClockPreferences.use24HourFormat(applicationContext)
             val bitmap = MatrixCanvasRenderer.renderFrame(
-                matrixSize = matrixLength,
                 time = time,
                 batteryLevel = batteryLevel,
                 unreadNotifications = unreadCount,

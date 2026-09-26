@@ -180,7 +180,6 @@ fun GlyphClockHomeScreen() {
                 // Render 25x25 matrix bitmap preview
                 val previewBitmap = remember(currentTime, batteryLevel, unreadCount, use24Hour) {
                     MatrixCanvasRenderer.renderFrame(
-                        matrixSize = 25,
                         time = currentTime,
                         batteryLevel = batteryLevel,
                         unreadNotifications = unreadCount,

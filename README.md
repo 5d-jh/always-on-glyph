@@ -37,7 +37,7 @@ app/src/main/
 ├── java/com/jh/alwaysonglyph/
 │   ├── MainActivity.kt                       # Compose 메인 UI (Live Preview, 설정 바로가기)
 │   ├── renderer/
-│   │   └── MatrixCanvasRenderer.kt           # 25x25 및 13x13 픽셀 매트릭스 렌더러 (픽셀 폰트 4x8, 3x5, 2x6, 2x5)
+│   │   └── MatrixCanvasRenderer.kt           # 25x25 및 13x13 픽셀 매트릭스 렌더러 (도트매트릭스 폰트 5x7, 3x5, 2x6, 2x5)
 │   ├── receiver/
 │   │   └── BatteryStateReceiver.kt           # 배터리 퍼센트 감지 수신기
 │   └── service/
