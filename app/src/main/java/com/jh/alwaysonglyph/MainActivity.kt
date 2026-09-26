@@ -7,7 +7,7 @@ import android.provider.Settings
 import android.widget.Toast
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
-import androidx.activity.enableEdgeToEdge
+import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
@@ -16,13 +16,14 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.WindowInsets
+import androidx.compose.foundation.layout.consumeWindowInsets
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.safeDrawing
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.windowInsetsPadding
+import androidx.compose.foundation.layout.statusBars
+import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
@@ -30,13 +31,17 @@ import androidx.compose.material3.Button
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.Divider
+import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
-import androidx.compose.material3.OutlinedTextField
+import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Slider
-import androidx.compose.material3.Surface
 import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
+import androidx.compose.material3.TimePicker
+import androidx.compose.material3.TimePickerDialog
+import androidx.compose.material3.rememberTimePickerState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -45,10 +50,13 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.geometry.Size
+import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.FilterQuality
 import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -60,23 +68,49 @@ import com.jh.alwaysonglyph.ui.theme.AlwaysOnGlyphTheme
 import java.time.LocalTime
 import java.time.format.DateTimeFormatter
 
+private data class SavedSettings(
+    val use24Hour: Boolean,
+    val brightness: Int,
+    val disableEnabled: Boolean,
+    val disableStartMinutes: Int,
+    val disableEndMinutes: Int,
+)
+
+@Composable
+private fun StatusBarProtection(
+    color: Color = MaterialTheme.colorScheme.background,
+) {
+    val density = LocalDensity.current
+    val gradientHeight = WindowInsets.statusBars.getTop(density).times(1.2f)
+    Canvas(modifier = Modifier.fillMaxSize()) {
+        drawRect(
+            brush = Brush.verticalGradient(
+                colors = listOf(
+                    color.copy(alpha = 1f),
+                    color.copy(alpha = 0.8f),
+                    Color.Transparent
+                ),
+                startY = 0f,
+                endY = gradientHeight
+            ),
+            size = Size(size.width, gradientHeight)
+        )
+    }
+}
+
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        enableEdgeToEdge()
+        window.isNavigationBarContrastEnforced = false
         setContent {
             AlwaysOnGlyphTheme {
-                Surface(
-                    modifier = Modifier.fillMaxSize(),
-                    color = MaterialTheme.colorScheme.background
-                ) {
-                    GlyphClockHomeScreen()
-                }
+                GlyphClockHomeScreen()
             }
         }
     }
 }
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun GlyphClockHomeScreen() {
     val context = LocalContext.current
@@ -86,14 +120,53 @@ fun GlyphClockHomeScreen() {
     var batteryLevel by remember { mutableStateOf(100) }
     var unreadCount by remember { mutableStateOf(0) }
     var currentTime by remember { mutableStateOf(LocalTime.now()) }
-    var use24Hour by remember { mutableStateOf(ClockPreferences.use24HourFormat(context)) }
-    var brightness by remember { mutableStateOf(ClockPreferences.getBrightness(context).toFloat()) }
-    var disableEnabled by remember { mutableStateOf(ClockPreferences.isAodDisabledEnabled(context)) }
-    var disableStartText by remember {
-        mutableStateOf(ClockPreferences.minutesToTimeString(ClockPreferences.getAodDisabledStartMinutes(context)))
+
+    var saved by remember {
+        mutableStateOf(
+            SavedSettings(
+                use24Hour = ClockPreferences.use24HourFormat(context),
+                brightness = ClockPreferences.getBrightness(context),
+                disableEnabled = ClockPreferences.isAodDisabledEnabled(context),
+                disableStartMinutes = ClockPreferences.getAodDisabledStartMinutes(context),
+                disableEndMinutes = ClockPreferences.getAodDisabledEndMinutes(context),
+            )
+        )
     }
-    var disableEndText by remember {
-        mutableStateOf(ClockPreferences.minutesToTimeString(ClockPreferences.getAodDisabledEndMinutes(context)))
+
+    var use24Hour by remember { mutableStateOf(saved.use24Hour) }
+    var brightness by remember { mutableStateOf(saved.brightness.toFloat()) }
+    var disableEnabled by remember { mutableStateOf(saved.disableEnabled) }
+    var disableStartMinutes by remember { mutableStateOf(saved.disableStartMinutes) }
+    var disableEndMinutes by remember { mutableStateOf(saved.disableEndMinutes) }
+    var showStartPicker by remember { mutableStateOf(false) }
+    var showEndPicker by remember { mutableStateOf(false) }
+
+    var isDirty by remember { mutableStateOf(false) }
+
+    fun applyChanges() {
+        ClockPreferences.setUse24HourFormat(context, use24Hour)
+        ClockPreferences.setBrightness(context, brightness.toInt())
+        ClockPreferences.setAodDisabledEnabled(context, disableEnabled)
+        ClockPreferences.setAodDisabledStartMinutes(context, disableStartMinutes)
+        ClockPreferences.setAodDisabledEndMinutes(context, disableEndMinutes)
+
+        saved = SavedSettings(
+            use24Hour = use24Hour,
+            brightness = brightness.toInt(),
+            disableEnabled = disableEnabled,
+            disableStartMinutes = disableStartMinutes,
+            disableEndMinutes = disableEndMinutes,
+        )
+        isDirty = false
+    }
+
+    fun cancelChanges() {
+        use24Hour = saved.use24Hour
+        brightness = saved.brightness.toFloat()
+        disableEnabled = saved.disableEnabled
+        disableStartMinutes = saved.disableStartMinutes
+        disableEndMinutes = saved.disableEndMinutes
+        isDirty = false
     }
 
     fun formatTimeLabel(time: LocalTime): String {
@@ -101,28 +174,50 @@ fun GlyphClockHomeScreen() {
         return time.format(DateTimeFormatter.ofPattern(pattern))
     }
 
-    fun refreshData() {
+    fun refreshLiveData() {
         isNotifGranted = UnreadNotificationListenerService.isNotificationAccessGranted(context)
         batteryLevel = BatteryStateReceiver.getBatteryPercentage(context)
         unreadCount = UnreadNotificationListenerService.getUnreadCount()
         currentTime = LocalTime.now()
-        use24Hour = ClockPreferences.use24HourFormat(context)
-        brightness = ClockPreferences.getBrightness(context).toFloat()
-        disableEnabled = ClockPreferences.isAodDisabledEnabled(context)
-        disableStartText = ClockPreferences.minutesToTimeString(ClockPreferences.getAodDisabledStartMinutes(context))
-        disableEndText = ClockPreferences.minutesToTimeString(ClockPreferences.getAodDisabledEndMinutes(context))
     }
 
     LaunchedEffect(Unit) {
-        refreshData()
+        refreshLiveData()
     }
 
+    Box(modifier = Modifier.fillMaxSize()) {
+        Scaffold(
+            topBar = {
+            if (isDirty) {
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .background(MaterialTheme.colorScheme.surface)
+                        .statusBarsPadding()
+                        .padding(horizontal = 4.dp, vertical = 4.dp),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    TextButton(onClick = { cancelChanges() }) {
+                        Text("Cancel")
+                    }
+                    Spacer(modifier = Modifier.weight(1f))
+                    Button(
+                        onClick = { applyChanges() },
+                        shape = RoundedCornerShape(50)
+                    ) {
+                        Text("Apply")
+                    }
+                }
+            }
+        }
+    ) { innerPadding ->
     Column(
         modifier = Modifier
             .fillMaxSize()
-            .windowInsetsPadding(WindowInsets.safeDrawing)
-            .padding(16.dp)
-            .verticalScroll(scrollState),
+            .consumeWindowInsets(innerPadding)
+            .verticalScroll(scrollState)
+            .padding(innerPadding)
+            .padding(16.dp),
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
         Text(
@@ -164,7 +259,7 @@ fun GlyphClockHomeScreen() {
                     checked = use24Hour,
                     onCheckedChange = { checked ->
                         use24Hour = checked
-                        ClockPreferences.setUse24HourFormat(context, checked)
+                        isDirty = true
                         currentTime = LocalTime.now()
                     }
                 )
@@ -201,7 +296,7 @@ fun GlyphClockHomeScreen() {
                     value = brightness,
                     onValueChange = { value ->
                         brightness = value
-                        ClockPreferences.setBrightness(context, value.toInt())
+                        isDirty = true
                     },
                     valueRange = 0f..255f,
                     modifier = Modifier.fillMaxWidth()
@@ -232,7 +327,7 @@ fun GlyphClockHomeScreen() {
                         checked = disableEnabled,
                         onCheckedChange = { checked ->
                             disableEnabled = checked
-                            ClockPreferences.setAodDisabledEnabled(context, checked)
+                            isDirty = true
                         }
                     )
                 }
@@ -244,31 +339,19 @@ fun GlyphClockHomeScreen() {
                         modifier = Modifier.fillMaxWidth(),
                         horizontalArrangement = Arrangement.spacedBy(8.dp)
                     ) {
-                        OutlinedTextField(
-                            value = disableStartText,
-                            onValueChange = { value ->
-                                disableStartText = value
-                                ClockPreferences.timeStringToMinutes(value)?.let {
-                                    ClockPreferences.setAodDisabledStartMinutes(context, it)
-                                }
-                            },
-                            label = { Text("시작 (HH:mm)") },
-                            singleLine = true,
+                        OutlinedButton(
+                            onClick = { showStartPicker = true },
                             modifier = Modifier.weight(1f)
-                        )
+                        ) {
+                            Text("시작 ${ClockPreferences.minutesToTimeString(disableStartMinutes)}")
+                        }
 
-                        OutlinedTextField(
-                            value = disableEndText,
-                            onValueChange = { value ->
-                                disableEndText = value
-                                ClockPreferences.timeStringToMinutes(value)?.let {
-                                    ClockPreferences.setAodDisabledEndMinutes(context, it)
-                                }
-                            },
-                            label = { Text("종료 (HH:mm)") },
-                            singleLine = true,
+                        OutlinedButton(
+                            onClick = { showEndPicker = true },
                             modifier = Modifier.weight(1f)
-                        )
+                        ) {
+                            Text("종료 ${ClockPreferences.minutesToTimeString(disableEndMinutes)}")
+                        }
                     }
 
                     Spacer(modifier = Modifier.height(4.dp))
@@ -336,7 +419,7 @@ fun GlyphClockHomeScreen() {
 
                 Spacer(modifier = Modifier.height(8.dp))
 
-                Button(onClick = { refreshData() }) {
+                Button(onClick = { refreshLiveData() }) {
                     Text("Refresh Preview")
                 }
             }
@@ -437,6 +520,69 @@ fun GlyphClockHomeScreen() {
                     Text(if (isNotifGranted) "Change Notification Settings" else "Grant Notification Access")
                 }
             }
+        }
+    }
+        }
+        StatusBarProtection()
+    }
+
+    if (showStartPicker) {
+        val state = rememberTimePickerState(
+            initialHour = disableStartMinutes / 60,
+            initialMinute = disableStartMinutes % 60,
+            is24Hour = true,
+        )
+        TimePickerDialog(
+            onDismissRequest = { showStartPicker = false },
+            title = { Text("시작 시간") },
+            confirmButton = {
+                TextButton(
+                    onClick = {
+                        disableStartMinutes = state.hour * 60 + state.minute
+                        isDirty = true
+                        showStartPicker = false
+                    }
+                ) {
+                    Text("확인")
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = { showStartPicker = false }) {
+                    Text("취소")
+                }
+            },
+        ) {
+            TimePicker(state = state)
+        }
+    }
+
+    if (showEndPicker) {
+        val state = rememberTimePickerState(
+            initialHour = disableEndMinutes / 60,
+            initialMinute = disableEndMinutes % 60,
+            is24Hour = true,
+        )
+        TimePickerDialog(
+            onDismissRequest = { showEndPicker = false },
+            title = { Text("종료 시간") },
+            confirmButton = {
+                TextButton(
+                    onClick = {
+                        disableEndMinutes = state.hour * 60 + state.minute
+                        isDirty = true
+                        showEndPicker = false
+                    }
+                ) {
+                    Text("확인")
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = { showEndPicker = false }) {
+                    Text("취소")
+                }
+            },
+        ) {
+            TimePicker(state = state)
         }
     }
 }
