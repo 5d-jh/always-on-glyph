@@ -35,9 +35,8 @@ class GlyphClockToyService : Service() {
             Log.d(TAG, "GlyphToy Event received: $event")
 
             when (event) {
-                GlyphToy.EVENT_AOD, GlyphToy.EVENT_CHANGE -> {
-                    updateMatrixDisplay()
-                }
+                GlyphToy.EVENT_AOD -> refreshAod()
+                GlyphToy.EVENT_CHANGE -> updateMatrixDisplay()
             }
         }
         true
@@ -110,6 +109,23 @@ class GlyphClockToyService : Service() {
         }
     }
 
+    private fun refreshAod() {
+        if (isAodDisabledNow()) {
+            turnOffMatrix()
+        } else {
+            updateMatrixDisplay()
+        }
+    }
+
+    private fun isAodDisabledNow(): Boolean {
+        if (!ClockPreferences.isAodDisabledEnabled(applicationContext)) return false
+        val now = LocalTime.now()
+        val nowMinutes = now.hour * 60 + now.minute
+        val start = ClockPreferences.getAodDisabledStartMinutes(applicationContext)
+        val end = ClockPreferences.getAodDisabledEndMinutes(applicationContext)
+        return ClockPreferences.isAodDisabledAt(nowMinutes, start, end)
+    }
+
     private fun initGlyphManager() {
         if (glyphMatrixManager != null) return
 
@@ -125,7 +141,7 @@ class GlyphClockToyService : Service() {
 
                 try {
                     manager.register(targetDevice)
-                    updateMatrixDisplay()
+                    refreshAod()
                 } catch (e: Exception) {
                     Log.e(TAG, "Failed to register target device $targetDevice", e)
                 }
@@ -158,7 +174,7 @@ class GlyphClockToyService : Service() {
             val matrixObject = GlyphMatrixObject.Builder()
                 .setImageSource(bitmap)
                 .setPosition(0, 0)
-                .setBrightness(200)
+                .setBrightness(ClockPreferences.getBrightness(applicationContext))
                 .build()
 
             val frame = GlyphMatrixFrame.Builder()

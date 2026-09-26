@@ -1,7 +1,9 @@
 package com.jh.alwaysonglyph
 
+import com.jh.alwaysonglyph.prefs.ClockPreferences
 import com.jh.alwaysonglyph.renderer.MatrixCanvasRenderer
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
 import org.junit.Test
 import java.time.LocalTime
@@ -52,6 +54,23 @@ class MatrixCanvasRendererTest {
         for ((char, glyph) in font.glyphs) {
             assertEquals("Glyph '$char' should have ${font.height} rows", font.height, glyph.size)
         }
+    }
+
+    @Test
+    fun testAodDisableWindow() {
+        // Same-day window 09:00 - 17:00
+        assertTrue(ClockPreferences.isAodDisabledAt(9 * 60, 9 * 60, 17 * 60))
+        assertTrue(ClockPreferences.isAodDisabledAt(16 * 60 + 59, 9 * 60, 17 * 60))
+        assertFalse(ClockPreferences.isAodDisabledAt(17 * 60, 9 * 60, 17 * 60))
+        assertFalse(ClockPreferences.isAodDisabledAt(8 * 60, 9 * 60, 17 * 60))
+
+        // Overnight window 22:00 - 07:00
+        assertTrue(ClockPreferences.isAodDisabledAt(23 * 60, 22 * 60, 7 * 60))
+        assertTrue(ClockPreferences.isAodDisabledAt(3 * 60, 22 * 60, 7 * 60))
+        assertFalse(ClockPreferences.isAodDisabledAt(12 * 60, 22 * 60, 7 * 60))
+
+        // Equal start/end means no disabled window
+        assertFalse(ClockPreferences.isAodDisabledAt(12 * 60, 9 * 60, 9 * 60))
     }
 
     @Test

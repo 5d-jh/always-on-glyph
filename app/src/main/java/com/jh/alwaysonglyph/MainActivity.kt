@@ -32,6 +32,8 @@ import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.Divider
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
+import androidx.compose.material3.OutlinedTextField
+import androidx.compose.material3.Slider
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
@@ -85,6 +87,14 @@ fun GlyphClockHomeScreen() {
     var unreadCount by remember { mutableStateOf(0) }
     var currentTime by remember { mutableStateOf(LocalTime.now()) }
     var use24Hour by remember { mutableStateOf(ClockPreferences.use24HourFormat(context)) }
+    var brightness by remember { mutableStateOf(ClockPreferences.getBrightness(context).toFloat()) }
+    var disableEnabled by remember { mutableStateOf(ClockPreferences.isAodDisabledEnabled(context)) }
+    var disableStartText by remember {
+        mutableStateOf(ClockPreferences.minutesToTimeString(ClockPreferences.getAodDisabledStartMinutes(context)))
+    }
+    var disableEndText by remember {
+        mutableStateOf(ClockPreferences.minutesToTimeString(ClockPreferences.getAodDisabledEndMinutes(context)))
+    }
 
     fun formatTimeLabel(time: LocalTime): String {
         val pattern = if (use24Hour) "HH:mm" else "hh:mm a"
@@ -97,6 +107,10 @@ fun GlyphClockHomeScreen() {
         unreadCount = UnreadNotificationListenerService.getUnreadCount()
         currentTime = LocalTime.now()
         use24Hour = ClockPreferences.use24HourFormat(context)
+        brightness = ClockPreferences.getBrightness(context).toFloat()
+        disableEnabled = ClockPreferences.isAodDisabledEnabled(context)
+        disableStartText = ClockPreferences.minutesToTimeString(ClockPreferences.getAodDisabledStartMinutes(context))
+        disableEndText = ClockPreferences.minutesToTimeString(ClockPreferences.getAodDisabledEndMinutes(context))
     }
 
     LaunchedEffect(Unit) {
@@ -154,6 +168,117 @@ fun GlyphClockHomeScreen() {
                         currentTime = LocalTime.now()
                     }
                 )
+            }
+        }
+
+        Spacer(modifier = Modifier.height(16.dp))
+
+        // Brightness Card
+        Card(
+            modifier = Modifier.fillMaxWidth(),
+            shape = RoundedCornerShape(16.dp)
+        ) {
+            Column(modifier = Modifier.padding(16.dp)) {
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Text(
+                        text = "Glyph 밝기",
+                        style = MaterialTheme.typography.titleMedium,
+                        fontWeight = FontWeight.Bold
+                    )
+
+                    Text(
+                        text = brightness.toInt().toString(),
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                }
+
+                Slider(
+                    value = brightness,
+                    onValueChange = { value ->
+                        brightness = value
+                        ClockPreferences.setBrightness(context, value.toInt())
+                    },
+                    valueRange = 0f..255f,
+                    modifier = Modifier.fillMaxWidth()
+                )
+            }
+        }
+
+        Spacer(modifier = Modifier.height(16.dp))
+
+        // AOD Disable Schedule Card
+        Card(
+            modifier = Modifier.fillMaxWidth(),
+            shape = RoundedCornerShape(16.dp)
+        ) {
+            Column(modifier = Modifier.padding(16.dp)) {
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Text(
+                        text = "특정 시간에 Always-on Glyph 끄기",
+                        style = MaterialTheme.typography.titleMedium,
+                        fontWeight = FontWeight.Bold
+                    )
+
+                    Switch(
+                        checked = disableEnabled,
+                        onCheckedChange = { checked ->
+                            disableEnabled = checked
+                            ClockPreferences.setAodDisabledEnabled(context, checked)
+                        }
+                    )
+                }
+
+                if (disableEnabled) {
+                    Spacer(modifier = Modifier.height(8.dp))
+
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.spacedBy(8.dp)
+                    ) {
+                        OutlinedTextField(
+                            value = disableStartText,
+                            onValueChange = { value ->
+                                disableStartText = value
+                                ClockPreferences.timeStringToMinutes(value)?.let {
+                                    ClockPreferences.setAodDisabledStartMinutes(context, it)
+                                }
+                            },
+                            label = { Text("시작 (HH:mm)") },
+                            singleLine = true,
+                            modifier = Modifier.weight(1f)
+                        )
+
+                        OutlinedTextField(
+                            value = disableEndText,
+                            onValueChange = { value ->
+                                disableEndText = value
+                                ClockPreferences.timeStringToMinutes(value)?.let {
+                                    ClockPreferences.setAodDisabledEndMinutes(context, it)
+                                }
+                            },
+                            label = { Text("종료 (HH:mm)") },
+                            singleLine = true,
+                            modifier = Modifier.weight(1f)
+                        )
+                    }
+
+                    Spacer(modifier = Modifier.height(4.dp))
+
+                    Text(
+                        text = "이 시간대에는 Flip to Glyph(Always-on)가 꺼집니다.",
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                }
             }
         }
 
