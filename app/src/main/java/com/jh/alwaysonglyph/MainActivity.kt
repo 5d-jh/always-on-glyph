@@ -62,8 +62,11 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.jh.alwaysonglyph.receiver.BatteryStateReceiver
 import com.jh.alwaysonglyph.renderer.MatrixCanvasRenderer
+import com.jh.alwaysonglyph.renderer.StatusData
+import com.jh.alwaysonglyph.renderer.StatusWidgetModule
 import com.jh.alwaysonglyph.service.UnreadNotificationListenerService
 import com.jh.alwaysonglyph.prefs.ClockPreferences
+import com.jh.alwaysonglyph.prefs.ClockStyle
 import com.jh.alwaysonglyph.ui.theme.AlwaysOnGlyphTheme
 import java.time.LocalTime
 import java.time.format.DateTimeFormatter
@@ -74,6 +77,7 @@ private data class SavedSettings(
     val disableEnabled: Boolean,
     val disableStartMinutes: Int,
     val disableEndMinutes: Int,
+    val clockStyle: ClockStyle,
 )
 
 @Composable
@@ -98,6 +102,24 @@ private fun StatusBarProtection(
     }
 }
 
+@Composable
+private fun ClockStyleOption(
+    label: String,
+    selected: Boolean,
+    onClick: () -> Unit,
+    modifier: Modifier = Modifier,
+) {
+    if (selected) {
+        Button(onClick = onClick, modifier = modifier) {
+            Text(label)
+        }
+    } else {
+        OutlinedButton(onClick = onClick, modifier = modifier) {
+            Text(label)
+        }
+    }
+}
+
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -118,8 +140,10 @@ fun GlyphClockHomeScreen() {
 
     var isNotifGranted by remember { mutableStateOf(false) }
     var batteryLevel by remember { mutableStateOf(100) }
+    var temperatureCelsius by remember { mutableStateOf(0) }
     var unreadCount by remember { mutableStateOf(0) }
     var currentTime by remember { mutableStateOf(LocalTime.now()) }
+    var statusWidget by remember { mutableStateOf(ClockPreferences.getStatusWidget(context)) }
 
     var saved by remember {
         mutableStateOf(
@@ -129,6 +153,7 @@ fun GlyphClockHomeScreen() {
                 disableEnabled = ClockPreferences.isAodDisabledEnabled(context),
                 disableStartMinutes = ClockPreferences.getAodDisabledStartMinutes(context),
                 disableEndMinutes = ClockPreferences.getAodDisabledEndMinutes(context),
+                clockStyle = ClockPreferences.getClockStyle(context),
             )
         )
     }
@@ -138,6 +163,7 @@ fun GlyphClockHomeScreen() {
     var disableEnabled by remember { mutableStateOf(saved.disableEnabled) }
     var disableStartMinutes by remember { mutableStateOf(saved.disableStartMinutes) }
     var disableEndMinutes by remember { mutableStateOf(saved.disableEndMinutes) }
+    var clockStyle by remember { mutableStateOf(saved.clockStyle) }
     var showStartPicker by remember { mutableStateOf(false) }
     var showEndPicker by remember { mutableStateOf(false) }
 
@@ -149,6 +175,7 @@ fun GlyphClockHomeScreen() {
         ClockPreferences.setAodDisabledEnabled(context, disableEnabled)
         ClockPreferences.setAodDisabledStartMinutes(context, disableStartMinutes)
         ClockPreferences.setAodDisabledEndMinutes(context, disableEndMinutes)
+        ClockPreferences.setClockStyle(context, clockStyle)
 
         saved = SavedSettings(
             use24Hour = use24Hour,
@@ -156,6 +183,7 @@ fun GlyphClockHomeScreen() {
             disableEnabled = disableEnabled,
             disableStartMinutes = disableStartMinutes,
             disableEndMinutes = disableEndMinutes,
+            clockStyle = clockStyle,
         )
         isDirty = false
     }
@@ -166,6 +194,7 @@ fun GlyphClockHomeScreen() {
         disableEnabled = saved.disableEnabled
         disableStartMinutes = saved.disableStartMinutes
         disableEndMinutes = saved.disableEndMinutes
+        clockStyle = saved.clockStyle
         isDirty = false
     }
 
@@ -177,8 +206,10 @@ fun GlyphClockHomeScreen() {
     fun refreshLiveData() {
         isNotifGranted = UnreadNotificationListenerService.isNotificationAccessGranted(context)
         batteryLevel = BatteryStateReceiver.getBatteryPercentage(context)
+        temperatureCelsius = BatteryStateReceiver.getTemperatureCelsius(context)
         unreadCount = UnreadNotificationListenerService.getUnreadCount()
         currentTime = LocalTime.now()
+        statusWidget = ClockPreferences.getStatusWidget(context)
     }
 
     LaunchedEffect(Unit) {
@@ -263,6 +294,48 @@ fun GlyphClockHomeScreen() {
                         currentTime = LocalTime.now()
                     }
                 )
+            }
+        }
+
+        Spacer(modifier = Modifier.height(16.dp))
+
+        // Clock Style Card
+        Card(
+            modifier = Modifier.fillMaxWidth(),
+            shape = RoundedCornerShape(16.dp)
+        ) {
+            Column(modifier = Modifier.padding(16.dp)) {
+                Text(
+                    text = "시계 스타일",
+                    style = MaterialTheme.typography.titleMedium,
+                    fontWeight = FontWeight.Bold
+                )
+
+                Spacer(modifier = Modifier.height(8.dp))
+
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
+                    ClockStyleOption(
+                        label = "디지털",
+                        selected = clockStyle == ClockStyle.DIGITAL,
+                        onClick = {
+                            clockStyle = ClockStyle.DIGITAL
+                            isDirty = true
+                        },
+                        modifier = Modifier.weight(1f)
+                    )
+                    ClockStyleOption(
+                        label = "아날로그",
+                        selected = clockStyle == ClockStyle.ANALOG,
+                        onClick = {
+                            clockStyle = ClockStyle.ANALOG
+                            isDirty = true
+                        },
+                        modifier = Modifier.weight(1f)
+                    )
+                }
             }
         }
 
@@ -386,13 +459,26 @@ fun GlyphClockHomeScreen() {
                 Spacer(modifier = Modifier.height(12.dp))
 
                 // Render 25x25 matrix bitmap preview
-                val previewBitmap = remember(currentTime, batteryLevel, unreadCount, use24Hour) {
-                    MatrixCanvasRenderer.renderFrame(
-                        time = currentTime,
+                val previewBitmap = remember(currentTime, batteryLevel, temperatureCelsius, unreadCount, use24Hour, clockStyle, statusWidget) {
+                    val data = StatusData(
                         batteryLevel = batteryLevel,
-                        unreadNotifications = unreadCount,
-                        use24Hour = use24Hour
+                        temperatureCelsius = temperatureCelsius,
+                        unreadNotifications = unreadCount
                     )
+                    when (clockStyle) {
+                        ClockStyle.DIGITAL -> MatrixCanvasRenderer.renderFrame(
+                            time = currentTime,
+                            use24Hour = use24Hour,
+                            widget = statusWidget,
+                            data = data
+                        )
+                        ClockStyle.ANALOG -> MatrixCanvasRenderer.renderAnalogFrame(
+                            time = currentTime,
+                            use24Hour = use24Hour,
+                            widget = statusWidget,
+                            data = data
+                        )
+                    }
                 }
 
                 Box(
@@ -412,15 +498,27 @@ fun GlyphClockHomeScreen() {
                 Spacer(modifier = Modifier.height(12.dp))
 
                 Text(
-                    text = "Time: ${formatTimeLabel(currentTime)} | Battery: $batteryLevel% | Unread: $unreadCount",
+                    text = "Time: ${formatTimeLabel(currentTime)} | Battery: $batteryLevel% | Temp: ${temperatureCelsius}° | Unread: $unreadCount | Widget: ${statusWidget.name}",
                     style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
 
                 Spacer(modifier = Modifier.height(8.dp))
 
-                Button(onClick = { refreshLiveData() }) {
-                    Text("Refresh Preview")
+                Row(
+                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
+                    Button(onClick = { refreshLiveData() }) {
+                        Text("Refresh Preview")
+                    }
+                    OutlinedButton(
+                        onClick = {
+                            statusWidget = StatusWidgetModule.nextWidget(statusWidget, unreadCount)
+                            ClockPreferences.setStatusWidget(context, statusWidget)
+                        }
+                    ) {
+                        Text("Widget: ${statusWidget.name}")
+                    }
                 }
             }
         }

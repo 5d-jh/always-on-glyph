@@ -2,6 +2,9 @@ package com.jh.alwaysonglyph
 
 import com.jh.alwaysonglyph.prefs.ClockPreferences
 import com.jh.alwaysonglyph.renderer.MatrixCanvasRenderer
+import com.jh.alwaysonglyph.renderer.StatusData
+import com.jh.alwaysonglyph.renderer.StatusWidget
+import com.jh.alwaysonglyph.renderer.StatusWidgetModule
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
@@ -84,5 +87,49 @@ class MatrixCanvasRendererTest {
                 assertTrue("Font should contain digit '$digit'", font.glyphs.containsKey(digit))
             }
         }
+    }
+
+    @Test
+    fun testStatusWidgetText() {
+        val data = StatusData(batteryLevel = 79, temperatureCelsius = 27, unreadNotifications = 3)
+        assertEquals("79%", StatusWidgetModule.text(StatusWidget.BATTERY, data))
+        assertEquals("27°", StatusWidgetModule.text(StatusWidget.TEMPERATURE, data))
+        assertEquals("·3", StatusWidgetModule.text(StatusWidget.NOTIFICATION, data))
+    }
+
+    @Test
+    fun testAvailableWidgetsWithoutNotification() {
+        assertEquals(
+            listOf(StatusWidget.BATTERY, StatusWidget.TEMPERATURE),
+            StatusWidgetModule.availableWidgets(0)
+        )
+    }
+
+    @Test
+    fun testAvailableWidgetsWithNotification() {
+        assertEquals(
+            listOf(StatusWidget.NOTIFICATION, StatusWidget.BATTERY, StatusWidget.TEMPERATURE),
+            StatusWidgetModule.availableWidgets(3)
+        )
+    }
+
+    @Test
+    fun testNextWidgetCyclesWithoutNotification() {
+        assertEquals(StatusWidget.TEMPERATURE, StatusWidgetModule.nextWidget(StatusWidget.BATTERY, 0))
+        assertEquals(StatusWidget.BATTERY, StatusWidgetModule.nextWidget(StatusWidget.TEMPERATURE, 0))
+    }
+
+    @Test
+    fun testNextWidgetCyclesWithNotification() {
+        assertEquals(StatusWidget.BATTERY, StatusWidgetModule.nextWidget(StatusWidget.NOTIFICATION, 5))
+        assertEquals(StatusWidget.TEMPERATURE, StatusWidgetModule.nextWidget(StatusWidget.BATTERY, 5))
+        assertEquals(StatusWidget.NOTIFICATION, StatusWidgetModule.nextWidget(StatusWidget.TEMPERATURE, 5))
+    }
+
+    @Test
+    fun testEffectiveWidgetFallsBackToBattery() {
+        assertEquals(StatusWidget.BATTERY, StatusWidgetModule.effectiveWidget(StatusWidget.NOTIFICATION, 0))
+        assertEquals(StatusWidget.NOTIFICATION, StatusWidgetModule.effectiveWidget(StatusWidget.NOTIFICATION, 1))
+        assertEquals(StatusWidget.TEMPERATURE, StatusWidgetModule.effectiveWidget(StatusWidget.TEMPERATURE, 0))
     }
 }

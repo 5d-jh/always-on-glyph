@@ -2,6 +2,9 @@ package com.jh.alwaysonglyph.prefs
 
 import android.content.Context
 import android.content.SharedPreferences
+import com.jh.alwaysonglyph.renderer.StatusWidget
+
+enum class ClockStyle { DIGITAL, ANALOG }
 
 object ClockPreferences {
     private const val PREFS_NAME = "clock_prefs"
@@ -10,6 +13,8 @@ object ClockPreferences {
     private const val KEY_DISABLE_ENABLED = "disable_enabled"
     private const val KEY_DISABLE_START_MINUTES = "disable_start_minutes"
     private const val KEY_DISABLE_END_MINUTES = "disable_end_minutes"
+    private const val KEY_CLOCK_STYLE = "clock_style"
+    private const val KEY_STATUS_WIDGET = "status_widget"
 
     private const val DEFAULT_BRIGHTNESS = 200
     private const val DEFAULT_DISABLE_START_MINUTES = 22 * 60
@@ -23,6 +28,32 @@ object ClockPreferences {
 
     fun setUse24HourFormat(context: Context, use24Hour: Boolean) {
         prefs(context).edit().putBoolean(KEY_USE_24_HOUR, use24Hour).apply()
+    }
+
+    fun getClockStyle(context: Context): ClockStyle {
+        val name = prefs(context).getString(KEY_CLOCK_STYLE, ClockStyle.DIGITAL.name)
+        return try {
+            ClockStyle.valueOf(name ?: ClockStyle.DIGITAL.name)
+        } catch (e: IllegalArgumentException) {
+            ClockStyle.DIGITAL
+        }
+    }
+
+    fun setClockStyle(context: Context, style: ClockStyle) {
+        prefs(context).edit().putString(KEY_CLOCK_STYLE, style.name).apply()
+    }
+
+    fun getStatusWidget(context: Context): StatusWidget {
+        val name = prefs(context).getString(KEY_STATUS_WIDGET, StatusWidget.BATTERY.name)
+        return try {
+            StatusWidget.valueOf(name ?: StatusWidget.BATTERY.name)
+        } catch (e: IllegalArgumentException) {
+            StatusWidget.BATTERY
+        }
+    }
+
+    fun setStatusWidget(context: Context, widget: StatusWidget) {
+        prefs(context).edit().putString(KEY_STATUS_WIDGET, widget.name).apply()
     }
 
     fun getBrightness(context: Context): Int =

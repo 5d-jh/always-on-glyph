@@ -15,7 +15,10 @@ import android.os.Messenger
 import android.util.Log
 import com.jh.alwaysonglyph.receiver.BatteryStateReceiver
 import com.jh.alwaysonglyph.renderer.MatrixCanvasRenderer
+import com.jh.alwaysonglyph.renderer.StatusData
+import com.jh.alwaysonglyph.renderer.StatusWidgetModule
 import com.jh.alwaysonglyph.prefs.ClockPreferences
+import com.jh.alwaysonglyph.prefs.ClockStyle
 import com.nothing.ketchum.Glyph
 import com.nothing.ketchum.GlyphMatrixFrame
 import com.nothing.ketchum.GlyphMatrixManager
@@ -36,7 +39,7 @@ class GlyphClockToyService : Service() {
 
             when (event) {
                 GlyphToy.EVENT_AOD -> refreshAod()
-                GlyphToy.EVENT_CHANGE -> updateMatrixDisplay()
+                GlyphToy.EVENT_CHANGE -> rotateStatusWidget()
             }
         }
         true
@@ -154,6 +157,14 @@ class GlyphClockToyService : Service() {
         })
     }
 
+    private fun rotateStatusWidget() {
+        val unreadCount = UnreadNotificationListenerService.getUnreadCount()
+        val current = ClockPreferences.getStatusWidget(applicationContext)
+        val next = StatusWidgetModule.nextWidget(current, unreadCount)
+        ClockPreferences.setStatusWidget(applicationContext, next)
+        updateMatrixDisplay()
+    }
+
     fun updateMatrixDisplay() {
         val manager = glyphMatrixManager ?: return
         if (!isConnected) return
@@ -161,15 +172,31 @@ class GlyphClockToyService : Service() {
         try {
             val time = LocalTime.now()
             val batteryLevel = BatteryStateReceiver.getBatteryPercentage(applicationContext)
+            val temperature = BatteryStateReceiver.getTemperatureCelsius(applicationContext)
             val unreadCount = UnreadNotificationListenerService.getUnreadCount()
 
             val use24Hour = ClockPreferences.use24HourFormat(applicationContext)
-            val bitmap = MatrixCanvasRenderer.renderFrame(
-                time = time,
+            val style = ClockPreferences.getClockStyle(applicationContext)
+            val widget = ClockPreferences.getStatusWidget(applicationContext)
+            val data = StatusData(
                 batteryLevel = batteryLevel,
-                unreadNotifications = unreadCount,
-                use24Hour = use24Hour
+                temperatureCelsius = temperature,
+                unreadNotifications = unreadCount
             )
+            val bitmap = when (style) {
+                ClockStyle.DIGITAL -> MatrixCanvasRenderer.renderFrame(
+                    time = time,
+                    use24Hour = use24Hour,
+                    widget = widget,
+                    data = data
+                )
+                ClockStyle.ANALOG -> MatrixCanvasRenderer.renderAnalogFrame(
+                    time = time,
+                    use24Hour = use24Hour,
+                    widget = widget,
+                    data = data
+                )
+            }
 
             val matrixObject = GlyphMatrixObject.Builder()
                 .setImageSource(bitmap)
@@ -182,7 +209,7 @@ class GlyphClockToyService : Service() {
                 .build(applicationContext)
 
             manager.setMatrixFrame(frame)
-            Log.d(TAG, "Updated matrix display successfully: time=$time, batt=$batteryLevel%, unread=$unreadCount")
+            Log.d(TAG, "Updated matrix display successfully: time=$time, batt=$batteryLevel%, temp=${temperature}C, unread=$unreadCount")
         } catch (e: Exception) {
             Log.e(TAG, "Failed to update matrix display", e)
         }
