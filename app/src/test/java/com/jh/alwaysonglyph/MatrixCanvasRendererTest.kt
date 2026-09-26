@@ -45,10 +45,10 @@ class MatrixCanvasRendererTest {
 
     @Test
     fun testBottomFontGlyphDimensions() {
-        val font = MatrixCanvasRenderer.FONT_2X5
+        val font = MatrixCanvasRenderer.FONT_3X5
         assertEquals(3, font.width)
         assertEquals(5, font.height)
-        assertEquals(0, font.spacing)
+        assertEquals(1, font.spacing)
         for ((char, glyph) in font.glyphs) {
             assertEquals("Glyph '$char' should have ${font.height} rows", font.height, glyph.size)
         }
@@ -58,7 +58,7 @@ class MatrixCanvasRendererTest {
     fun testAllFontsContainDigits() {
         val fonts = listOf(
             MatrixCanvasRenderer.FONT_5X7,
-            MatrixCanvasRenderer.FONT_2X5
+            MatrixCanvasRenderer.FONT_3X5
         )
         for (font in fonts) {
             for (digit in '0'..'9') {

@@ -132,48 +132,73 @@ object MatrixCanvasRenderer {
         )
     )
 
-    // Compact condensed pixel font for the Matrix bottom status (battery / notification count).
-    // 3-wide cell, ~2px strokes, no inter-character spacing so digits sit close together.
-    internal val FONT_2X5: PixelFont = PixelFont(
+    // 3x5 pixel font for the Matrix bottom status (battery / notification count).
+    // 3-wide cell, 5 rows tall, 1px spacing between characters.
+    internal val FONT_3X5: PixelFont = PixelFont(
         width = 3,
         height = 5,
-        spacing = 0,
+        spacing = 1,
         glyphs = mapOf(
             '0' to arrayOf(
-                " #",
+                " # ",
                 "# #",
                 "# #",
                 "# #",
-                " #"),
+                " # "),
             '1' to arrayOf(
-                " #",
-                "##",
-                " #",
-                " #",
-                " #"),
+                "  #",
+                " ##",
+                "  #",
+                "  #",
+                "  #"),
             '2' to arrayOf(
-                "##",
-                " #",
-                "##",
-                "# ",
-                "##"),
+                "###",
+                "  #",
+                "###",
+                "#  ",
+                "###"),
             '3' to arrayOf(
-                "##",
-                " #",
-                "##",
-                " #",
-                "##"),
+                "###",
+                "  #",
+                "###",
+                "  #",
+                "###"),
             '4' to arrayOf(
                 "# #",
                 "# #",
-                "##",
-                " #",
-                " #"),
-            '5' to arrayOf("##", "# ", "##", " #", "##"),
-            '6' to arrayOf("##", "# ", "##", "# #", "##"),
-            '7' to arrayOf("##", " #", " #", " #", " #"),
-            '8' to arrayOf("##", "# #", "##", "# #", "##"),
-            '9' to arrayOf("##", "# #", "##", " #", "##"),
+                "###",
+                "  #",
+                "  #"),
+            '5' to arrayOf(
+                "###",
+                "#  ",
+                "###",
+                "  #",
+                "###"),
+            '6' to arrayOf(
+                "###",
+                "#  ",
+                "###",
+                "# #",
+                "###"),
+            '7' to arrayOf(
+                "###",
+                "  #",
+                "  #",
+                "  #",
+                "  #"),
+            '8' to arrayOf(
+                "###",
+                "# #",
+                "###",
+                "# #",
+                "###"),
+            '9' to arrayOf(
+                "###",
+                "# #",
+                "###",
+                "  #",
+                "###"),
             '%' to arrayOf("# #", "  #", " # ", "#  ", "# #"),
             '·' to arrayOf("   ", "   ", " # ", "   ", "   ")
         )
@@ -207,7 +232,7 @@ object MatrixCanvasRenderer {
         } else {
             "$batteryLevel%"
         }
-        drawText(bitmap, bottomText, startY = 17, font = FONT_2X5)
+        drawText(bitmap, bottomText, startY = 17, font = FONT_3X5)
 
         return bitmap
     }
