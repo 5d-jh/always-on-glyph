@@ -1,14 +1,55 @@
 <resources>
     <string name="app_name">Always On Glyph</string>
-    <string name="action_go">Go</string>
-    <string name="baking_title">Baking with Gemini</string>
-    <string name="label_prompt">Prompt</string>
-    <string name="prompt_placeholder">Provide a recipe for the baked goods in the image</string>
-    <string name="image1_description">Cupcake</string>
-    <string name="image2_description">Cookies</string>
-    <string name="image3_description">Cake</string>
-    <string name="results_placeholder">(Results will appear here)</string>
+    <string name="widgets_title">Edit Widgets</string>
     <string name="toy_name">Clock &amp; Status Matrix</string>
     <string name="toy_summary">Displays HHmm time and battery / notification count on Glyph Matrix when locked and flipped.</string>
-    <string name="widgets_title">Edit Widgets</string>
+
+    <!-- Main screen -->
+    <string name="home_title">Glyph Matrix Status Toy</string>
+    <string name="home_subtitle">Flip to Glyph Clock &amp; Status Display</string>
+    <string name="section_behavior">Glyph Behavior</string>
+    <string name="section_appearance">Glyph Appearance</string>
+    <string name="brightness_label">Glyph Brightness</string>
+    <string name="disable_aod_label">Turn off Always-on Glyph at set times</string>
+    <string name="disable_start">Start %1$s</string>
+    <string name="disable_end">End %1$s</string>
+    <string name="disable_aod_hint">Flip to Glyph (Always-on) is turned off during this time range.</string>
+    <string name="turn_off_on_wake_label">Turn off Glyph when screen wakes</string>
+    <string name="enable_hint">To enable this clock when the phone is locked and flipped, select \"Clock &amp; Status Matrix\" in Nothing OS Settings > Glyph Interface > Flip to Glyph > Always-on Glyph Toy.</string>
+    <string name="manage_toys">Manage Glyph Toys in Settings</string>
+    <string name="toast_open_toys_manager">Opening Nothing OS Toys Manager (Go to Settings > Glyph Interface)</string>
+    <string name="use_24_hour">Use 24-hour format</string>
+    <string name="clock_digital">Digital</string>
+    <string name="clock_analog">Analog</string>
+    <string name="matrix_preview_desc">Matrix Preview</string>
+    <string name="preview_details">Time: %1$s | Battery: %2$d%% | Temp: %3$d° | Weather: %4$s | Unread: %5$d | Widget: %6$s</string>
+    <string name="refresh_preview">Refresh Preview</string>
+    <string name="widget_label_format">Widget: %1$s</string>
+    <string name="edit_widgets">Edit Widgets</string>
+    <string name="start_time">Start time</string>
+    <string name="end_time">End time</string>
+    <string name="ok">OK</string>
+    <string name="cancel">Cancel</string>
+    <string name="apply">Apply</string>
+
+    <!-- Widgets -->
+    <string name="widget_notification">Notifications</string>
+    <string name="widget_battery">Battery</string>
+    <string name="widget_temperature">Device temperature</string>
+    <string name="widget_weather">Weather</string>
+    <string name="widget_notification_desc">Unread notification count</string>
+    <string name="widget_battery_desc">Battery level</string>
+    <string name="widget_temperature_desc">Device (battery) temperature</string>
+    <string name="widget_weather_desc">Current temperature</string>
+
+    <!-- Edit widgets screen -->
+    <string name="edit_widgets_hint">Select the widgets to show. When there are notifications, the notification widget is shown first.</string>
+    <string name="back">Back</string>
+    <string name="weather_tooltip">Approximate location is sufficient. Location coordinates are sent to Open-Meteo (api.open-meteo.com) to provide weather information.</string>
+    <string name="weather_tooltip_desc">Location data usage info</string>
+    <string name="notification_permission_title">Notification access not granted</string>
+    <string name="notification_permission_message">Allow notification access to show the unread notification count.</string>
+    <string name="location_permission_title">Location permission not granted</string>
+    <string name="location_permission_message">Location permission is required to show the current temperature. Approximate location is sufficient. Location coordinates are sent to the weather provider Open-Meteo (api.open-meteo.com); without permission, IP-based location lookup (ipwho.is) may be used instead.</string>
+    <string name="grant_permission">Grant permission</string>
 </resources>

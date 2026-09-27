@@ -1,5 +1,32 @@
 package com.jh.alwaysonglyph.renderer
 
+import android.content.Context
+import com.jh.alwaysonglyph.R
+
+/**
+ * Localized display name for the widget.
+ */
+fun StatusWidget.displayName(context: Context): String = context.getString(
+    when (this) {
+        StatusWidget.NOTIFICATION -> R.string.widget_notification
+        StatusWidget.BATTERY -> R.string.widget_battery
+        StatusWidget.TEMPERATURE -> R.string.widget_temperature
+        StatusWidget.WEATHER -> R.string.widget_weather
+    }
+)
+
+/**
+ * Localized description for the widget.
+ */
+fun StatusWidget.description(context: Context): String = context.getString(
+    when (this) {
+        StatusWidget.NOTIFICATION -> R.string.widget_notification_desc
+        StatusWidget.BATTERY -> R.string.widget_battery_desc
+        StatusWidget.TEMPERATURE -> R.string.widget_temperature_desc
+        StatusWidget.WEATHER -> R.string.widget_weather_desc
+    }
+)
+
 /**
  * The mini status widget shown at the bottom of the matrix (digital & analog).
  *

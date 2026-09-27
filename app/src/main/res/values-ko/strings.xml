@@ -1,0 +1,55 @@
+<resources>
+    <string name="app_name">Always On Glyph</string>
+    <string name="widgets_title">위젯 편집</string>
+    <string name="toy_name">시계 &amp; 상태 매트릭스</string>
+    <string name="toy_summary">잠금 및 뒤집기 상태에서 Glyph Matrix에 HHmm 시간과 배터리 / 알림 개수를 표시합니다.</string>
+
+    <!-- Main screen -->
+    <string name="home_title">글리프 매트릭스 상태 토이</string>
+    <string name="home_subtitle">뒤집어서 글리프 시계 및 상태 표시</string>
+    <string name="section_behavior">글리프 동작</string>
+    <string name="section_appearance">글리프 모양</string>
+    <string name="brightness_label">글리프 밝기</string>
+    <string name="disable_aod_label">특정 시간에 Always-on 글리프 끄기</string>
+    <string name="disable_start">시작 %1$s</string>
+    <string name="disable_end">종료 %1$s</string>
+    <string name="disable_aod_hint">이 시간대에는 Flip to Glyph(Always-on)가 꺼집니다.</string>
+    <string name="turn_off_on_wake_label">화면 켜지면 글리프 끄기</string>
+    <string name="enable_hint">잠금 및 뒤집기 상태에서 이 시계를 사용하려면 Nothing OS 설정 > Glyph Interface > Flip to Glyph > Always-on Glyph Toy에서 \"시계 &amp; 상태 매트릭스\"를 선택하세요.</string>
+    <string name="manage_toys">설정에서 Glyph Toys 관리</string>
+    <string name="toast_open_toys_manager">Nothing OS Toys Manager 열기 (설정 > Glyph Interface로 이동)</string>
+    <string name="use_24_hour">24시간제 사용</string>
+    <string name="clock_digital">디지털</string>
+    <string name="clock_analog">아날로그</string>
+    <string name="matrix_preview_desc">매트릭스 미리보기</string>
+    <string name="preview_details">시간: %1$s | 배터리: %2$d%% | 기기 온도: %3$d° | 날씨: %4$s | 읽지 않음: %5$d | 위젯: %6$s</string>
+    <string name="refresh_preview">미리보기 새로고침</string>
+    <string name="widget_label_format">위젯: %1$s</string>
+    <string name="edit_widgets">위젯 편집</string>
+    <string name="start_time">시작 시간</string>
+    <string name="end_time">종료 시간</string>
+    <string name="ok">확인</string>
+    <string name="cancel">취소</string>
+    <string name="apply">적용</string>
+
+    <!-- Widgets -->
+    <string name="widget_notification">알림</string>
+    <string name="widget_battery">배터리</string>
+    <string name="widget_temperature">기기 온도</string>
+    <string name="widget_weather">날씨</string>
+    <string name="widget_notification_desc">읽지 않은 알림 개수</string>
+    <string name="widget_battery_desc">배터리 잔량</string>
+    <string name="widget_temperature_desc">기기(배터리) 온도</string>
+    <string name="widget_weather_desc">현재 기온</string>
+
+    <!-- Edit widgets screen -->
+    <string name="edit_widgets_hint">표시할 위젯을 선택하세요. 알림이 있으면 알림 위젯이 가장 먼저 표시됩니다.</string>
+    <string name="back">뒤로</string>
+    <string name="weather_tooltip">대략적인 위치만 허용해도 됩니다. 위치 좌표는 기상 정보 제공을 위해 Open-Meteo(api.open-meteo.com)로 전송됩니다.</string>
+    <string name="weather_tooltip_desc">위치 데이터 사용 안내</string>
+    <string name="notification_permission_title">알림 접근 권한이 없습니다</string>
+    <string name="notification_permission_message">읽지 않은 알림 개수를 표시하려면 알림 접근 권한을 허용해 주세요.</string>
+    <string name="location_permission_title">위치 권한이 없습니다</string>
+    <string name="location_permission_message">현재 위치의 기온을 표시하려면 위치 권한이 필요합니다. 대략적인 위치만 허용해도 충분합니다. 위치 좌표는 기상 정보 제공 업체 Open-Meteo(api.open-meteo.com)로 전송되며, 권한이 없으면 IP 기반 위치 조회(ipwho.is)가 대신 사용될 수 있습니다.</string>
+    <string name="grant_permission">권한 허용</string>
+</resources>

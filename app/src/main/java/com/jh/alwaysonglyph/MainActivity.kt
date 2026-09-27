@@ -70,6 +70,7 @@ import androidx.compose.ui.graphics.FilterQuality
 import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalLifecycleOwner
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.core.content.ContextCompat
 import androidx.lifecycle.Lifecycle
@@ -79,8 +80,10 @@ import com.jh.alwaysonglyph.renderer.MatrixCanvasRenderer
 import com.jh.alwaysonglyph.renderer.StatusData
 import com.jh.alwaysonglyph.renderer.StatusWidgetModule
 import com.jh.alwaysonglyph.service.UnreadNotificationListenerService
+import com.jh.alwaysonglyph.R
 import com.jh.alwaysonglyph.prefs.ClockPreferences
 import com.jh.alwaysonglyph.prefs.ClockStyle
+import com.jh.alwaysonglyph.renderer.displayName
 import com.jh.alwaysonglyph.ui.theme.AlwaysOnGlyphTheme
 import com.jh.alwaysonglyph.weather.WeatherRepository
 import java.time.LocalTime
@@ -319,7 +322,7 @@ fun GlyphClockHomeScreen() {
             CenterAlignedTopAppBar(
                 title = {
                     Text(
-                        text = "Glyph Matrix Status Toy",
+                        text = stringResource(R.string.home_title),
                         style = MaterialTheme.typography.titleLarge
                     )
                 },
@@ -342,13 +345,13 @@ fun GlyphClockHomeScreen() {
                             onClick = { cancelChanges() },
                             modifier = Modifier.weight(1f)
                         ) {
-                            Text("Cancel")
+                            Text(stringResource(R.string.cancel))
                         }
                         Button(
                             onClick = { applyChanges() },
                             modifier = Modifier.weight(1f)
                         ) {
-                            Text("Apply")
+                            Text(stringResource(R.string.apply))
                         }
                     }
                 }
@@ -363,7 +366,7 @@ fun GlyphClockHomeScreen() {
         ) {
             item {
                 Text(
-                    text = "Flip to Glyph Clock & Status Display",
+                    text = stringResource(R.string.home_subtitle),
                     style = MaterialTheme.typography.bodyMedium,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                     modifier = Modifier
@@ -373,7 +376,7 @@ fun GlyphClockHomeScreen() {
                 )
             }
 
-            item { SectionHeader("Glyph 동작") }
+            item { SectionHeader(stringResource(R.string.section_behavior)) }
 
             item {
                 SettingsCard(modifier = Modifier.padding(horizontal = 16.dp)) {
@@ -388,7 +391,7 @@ fun GlyphClockHomeScreen() {
                             verticalAlignment = Alignment.CenterVertically
                         ) {
                             Text(
-                                text = "Glyph 밝기",
+                                text = stringResource(R.string.brightness_label),
                                 style = MaterialTheme.typography.titleMedium
                             )
                             Text(
@@ -422,7 +425,7 @@ fun GlyphClockHomeScreen() {
                             verticalAlignment = Alignment.CenterVertically
                         ) {
                             Text(
-                                text = "특정 시간에 Always-on Glyph 끄기",
+                                text = stringResource(R.string.disable_aod_label),
                                 style = MaterialTheme.typography.titleMedium
                             )
                             Switch(
@@ -445,21 +448,21 @@ fun GlyphClockHomeScreen() {
                                     onClick = { showStartPicker = true },
                                     modifier = Modifier.weight(1f)
                                 ) {
-                                    Text("시작 ${ClockPreferences.minutesToTimeString(disableStartMinutes)}")
+                                    Text(stringResource(R.string.disable_start, ClockPreferences.minutesToTimeString(disableStartMinutes)))
                                 }
 
                                 OutlinedButton(
                                     onClick = { showEndPicker = true },
                                     modifier = Modifier.weight(1f)
                                 ) {
-                                    Text("종료 ${ClockPreferences.minutesToTimeString(disableEndMinutes)}")
+                                    Text(stringResource(R.string.disable_end, ClockPreferences.minutesToTimeString(disableEndMinutes)))
                                 }
                             }
 
                             Spacer(modifier = Modifier.height(4.dp))
 
                             Text(
-                                text = "이 시간대에는 Flip to Glyph(Always-on)가 꺼집니다.",
+                                text = stringResource(R.string.disable_aod_hint),
                                 style = MaterialTheme.typography.bodySmall,
                                 color = MaterialTheme.colorScheme.onSurfaceVariant
                             )
@@ -472,7 +475,7 @@ fun GlyphClockHomeScreen() {
                         colors = ListItemDefaults.colors(containerColor = Color.Transparent),
                         headlineContent = {
                             Text(
-                                text = "화면 켜지면 Glyph 끄기",
+                                text = stringResource(R.string.turn_off_on_wake_label),
                                 style = MaterialTheme.typography.titleMedium
                             )
                         },
@@ -490,7 +493,7 @@ fun GlyphClockHomeScreen() {
                     CardDivider()
 
                     Text(
-                        text = "To enable this clock when phone is locked and flipped, select 'Clock & Status Matrix' in Nothing OS Settings > Glyph Interface > Flip to Glyph > Always-on Glyph Toy.",
+                        text = stringResource(R.string.enable_hint),
                         style = MaterialTheme.typography.bodyMedium,
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                         modifier = Modifier
@@ -502,7 +505,7 @@ fun GlyphClockHomeScreen() {
                         colors = ListItemDefaults.colors(containerColor = Color.Transparent),
                         headlineContent = {
                             Text(
-                                text = "Manage Glyph Toys in Settings",
+                                text = stringResource(R.string.manage_toys),
                                 style = MaterialTheme.typography.titleMedium
                             )
                         },
@@ -525,7 +528,7 @@ fun GlyphClockHomeScreen() {
                             } catch (e: Exception) {
                                 Toast.makeText(
                                     context,
-                                    "Opening Nothing OS Toys Manager (Go to Settings > Glyph Interface)",
+                                    context.getString(R.string.toast_open_toys_manager),
                                     Toast.LENGTH_LONG
                                 ).show()
                                 context.startActivity(Intent(Settings.ACTION_SETTINGS))
@@ -535,7 +538,7 @@ fun GlyphClockHomeScreen() {
                 }
             }
 
-            item { SectionHeader("Glyph 모양") }
+            item { SectionHeader(stringResource(R.string.section_appearance)) }
 
             item {
                 SettingsCard(modifier = Modifier.padding(horizontal = 16.dp)) {
@@ -543,7 +546,7 @@ fun GlyphClockHomeScreen() {
                         colors = ListItemDefaults.colors(containerColor = Color.Transparent),
                         headlineContent = {
                             Text(
-                                text = "24시간제 사용",
+                                text = stringResource(R.string.use_24_hour),
                                 style = MaterialTheme.typography.titleMedium
                             )
                         },
@@ -573,7 +576,7 @@ fun GlyphClockHomeScreen() {
                                 isDirty = true
                             },
                             shape = SegmentedButtonDefaults.itemShape(index = 0, count = 2),
-                            label = { Text("디지털") }
+                            label = { Text(stringResource(R.string.clock_digital)) }
                         )
                         SegmentedButton(
                             selected = clockStyle == ClockStyle.ANALOG,
@@ -582,7 +585,7 @@ fun GlyphClockHomeScreen() {
                                 isDirty = true
                             },
                             shape = SegmentedButtonDefaults.itemShape(index = 1, count = 2),
-                            label = { Text("아날로그") }
+                            label = { Text(stringResource(R.string.clock_analog)) }
                         )
                     }
 
@@ -602,7 +605,7 @@ fun GlyphClockHomeScreen() {
                         ) {
                             Image(
                                 bitmap = previewImage,
-                                contentDescription = "Matrix Preview",
+                                contentDescription = stringResource(R.string.matrix_preview_desc),
                                 modifier = Modifier.size(180.dp),
                                 filterQuality = FilterQuality.None // Pixel art nearest neighbor rendering
                             )
@@ -611,7 +614,15 @@ fun GlyphClockHomeScreen() {
                         Spacer(modifier = Modifier.height(12.dp))
 
                         Text(
-                            text = "Time: ${formatTimeLabel(currentTime)} | Battery: $batteryLevel% | Temp: ${temperatureCelsius}° | Weather: ${weatherCelsius?.let { "${it}°" } ?: "--"} | Unread: $unreadCount | Widget: ${statusWidget.name}",
+                            text = stringResource(
+                                R.string.preview_details,
+                                formatTimeLabel(currentTime),
+                                batteryLevel,
+                                temperatureCelsius,
+                                weatherCelsius?.let { "${it}°" } ?: "--",
+                                unreadCount,
+                                statusWidget.displayName(context)
+                            ),
                             style = MaterialTheme.typography.bodySmall,
                             color = MaterialTheme.colorScheme.onSurfaceVariant
                         )
@@ -625,7 +636,7 @@ fun GlyphClockHomeScreen() {
                                 refreshLiveData()
                                 ensureLocationPermission()
                             }) {
-                                Text("Refresh Preview")
+                                Text(stringResource(R.string.refresh_preview))
                             }
                             OutlinedButton(
                                 onClick = {
@@ -633,7 +644,7 @@ fun GlyphClockHomeScreen() {
                                     ClockPreferences.setStatusWidget(context, statusWidget)
                                 }
                             ) {
-                                Text("Widget: ${statusWidget.name}")
+                                Text(stringResource(R.string.widget_label_format, statusWidget.displayName(context)))
                             }
                         }
                     }
@@ -644,7 +655,7 @@ fun GlyphClockHomeScreen() {
                         colors = ListItemDefaults.colors(containerColor = Color.Transparent),
                         headlineContent = {
                             Text(
-                                text = "Edit Widgets",
+                                text = stringResource(R.string.edit_widgets),
                                 style = MaterialTheme.typography.titleMedium
                             )
                         },
@@ -672,7 +683,7 @@ fun GlyphClockHomeScreen() {
         )
         TimePickerDialog(
             onDismissRequest = { showStartPicker = false },
-            title = { Text("시작 시간") },
+            title = { Text(stringResource(R.string.start_time)) },
             confirmButton = {
                 TextButton(
                     onClick = {
@@ -681,12 +692,12 @@ fun GlyphClockHomeScreen() {
                         showStartPicker = false
                     }
                 ) {
-                    Text("확인")
+                    Text(stringResource(R.string.ok))
                 }
             },
             dismissButton = {
                 TextButton(onClick = { showStartPicker = false }) {
-                    Text("취소")
+                    Text(stringResource(R.string.cancel))
                 }
             },
         ) {
@@ -702,7 +713,7 @@ fun GlyphClockHomeScreen() {
         )
         TimePickerDialog(
             onDismissRequest = { showEndPicker = false },
-            title = { Text("종료 시간") },
+            title = { Text(stringResource(R.string.end_time)) },
             confirmButton = {
                 TextButton(
                     onClick = {
@@ -711,12 +722,12 @@ fun GlyphClockHomeScreen() {
                         showEndPicker = false
                     }
                 ) {
-                    Text("확인")
+                    Text(stringResource(R.string.ok))
                 }
             },
             dismissButton = {
                 TextButton(onClick = { showEndPicker = false }) {
-                    Text("취소")
+                    Text(stringResource(R.string.cancel))
                 }
             },
         ) {

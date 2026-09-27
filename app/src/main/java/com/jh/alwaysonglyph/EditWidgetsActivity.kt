@@ -57,14 +57,18 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalLifecycleOwner
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.core.content.ContextCompat
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleEventObserver
+import com.jh.alwaysonglyph.R
 import com.jh.alwaysonglyph.prefs.ClockPreferences
 import com.jh.alwaysonglyph.renderer.StatusWidget
 import com.jh.alwaysonglyph.renderer.StatusWidgetModule
+import com.jh.alwaysonglyph.renderer.description
+import com.jh.alwaysonglyph.renderer.displayName
 import com.jh.alwaysonglyph.service.UnreadNotificationListenerService
 import com.jh.alwaysonglyph.ui.theme.AlwaysOnGlyphTheme
 import com.jh.alwaysonglyph.weather.WeatherRepository
@@ -92,20 +96,6 @@ class EditWidgetsActivity : ComponentActivity() {
             }
         }
     }
-}
-
-private fun StatusWidget.label(): String = when (this) {
-    StatusWidget.NOTIFICATION -> "알림"
-    StatusWidget.BATTERY -> "배터리"
-    StatusWidget.TEMPERATURE -> "기기 온도"
-    StatusWidget.WEATHER -> "날씨"
-}
-
-private fun StatusWidget.description(): String = when (this) {
-    StatusWidget.NOTIFICATION -> "읽지 않은 알림 개수"
-    StatusWidget.BATTERY -> "배터리 잔량"
-    StatusWidget.TEMPERATURE -> "기기(배터리) 온도"
-    StatusWidget.WEATHER -> "현재 기온"
 }
 
 @Composable
@@ -183,7 +173,7 @@ fun EditWidgetsScreen() {
             TopAppBar(
                 title = {
                     Text(
-                        text = "Edit Widgets",
+                        text = stringResource(R.string.edit_widgets),
                         style = MaterialTheme.typography.titleMedium,
                         fontWeight = FontWeight.Bold
                     )
@@ -192,7 +182,7 @@ fun EditWidgetsScreen() {
                     IconButton(onClick = { activity?.finish() }) {
                         Icon(
                             imageVector = Icons.AutoMirrored.Filled.ArrowBack,
-                            contentDescription = "Back"
+                            contentDescription = stringResource(R.string.back)
                         )
                     }
                 },
@@ -208,7 +198,7 @@ fun EditWidgetsScreen() {
                 .padding(innerPadding)
         ) {
             Text(
-                text = "표시할 위젯을 선택하세요. 알림이 있으면 알림 위젯이 가장 먼저 표시됩니다.",
+                text = stringResource(R.string.edit_widgets_hint),
                 style = MaterialTheme.typography.bodySmall,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
                 modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp)
@@ -241,13 +231,13 @@ fun EditWidgetsScreen() {
                             ) {
                                 Column(modifier = Modifier.weight(1f)) {
                                     Text(
-                                        text = widget.label(),
+                                        text = widget.displayName(context),
                                         style = MaterialTheme.typography.titleMedium,
                                         fontWeight = FontWeight.Bold,
                                         color = if (included) MaterialTheme.colorScheme.onSurface else Color.Gray
                                     )
                                     Text(
-                                        text = widget.description(),
+                                        text = widget.description(context),
                                         style = MaterialTheme.typography.bodySmall,
                                         color = MaterialTheme.colorScheme.onSurfaceVariant
                                     )
@@ -261,7 +251,7 @@ fun EditWidgetsScreen() {
                                         tooltip = {
                                             PlainTooltip {
                                                 Text(
-                                                    "대략적인 위치만 허용해도 됩니다. 위치 좌표는 기상 정보 제공을 위해 Open-Meteo(api.open-meteo.com)로 전송됩니다."
+                                                    stringResource(R.string.weather_tooltip)
                                                 )
                                             }
                                         },
@@ -270,7 +260,7 @@ fun EditWidgetsScreen() {
                                         IconButton(onClick = { scope.launch { tooltipState.show() } }) {
                                             Icon(
                                                 imageVector = Icons.Filled.Info,
-                                                contentDescription = "위치 데이터 사용 안내",
+                                                contentDescription = stringResource(R.string.weather_tooltip_desc),
                                                 tint = MaterialTheme.colorScheme.onSurfaceVariant
                                             )
                                         }
@@ -291,9 +281,9 @@ fun EditWidgetsScreen() {
 
                             if (showNotificationAlert) {
                                 PermissionAlertCard(
-                                    title = "알림 접근 권한이 없습니다",
-                                    message = "읽지 않은 알림 개수를 표시하려면 알림 접근 권한을 허용해 주세요.",
-                                    buttonLabel = "권한 허용",
+                                    title = stringResource(R.string.notification_permission_title),
+                                    message = stringResource(R.string.notification_permission_message),
+                                    buttonLabel = stringResource(R.string.grant_permission),
                                     onAction = {
                                         context.startActivity(
                                             Intent(Settings.ACTION_NOTIFICATION_LISTENER_SETTINGS)
@@ -304,9 +294,9 @@ fun EditWidgetsScreen() {
 
                             if (showLocationAlert) {
                                 PermissionAlertCard(
-                                    title = "위치 권한이 없습니다",
-                                    message = "현재 위치의 기온을 표시하려면 위치 권한이 필요합니다. 대략적인 위치만 허용해도 충분합니다. 위치 좌표는 기상 정보 제공 업체 Open-Meteo(api.open-meteo.com)로 전송되며, 권한이 없으면 IP 기반 위치 조회(ipwho.is)가 대신 사용될 수 있습니다.",
-                                    buttonLabel = "권한 허용",
+                                    title = stringResource(R.string.location_permission_title),
+                                    message = stringResource(R.string.location_permission_message),
+                                    buttonLabel = stringResource(R.string.grant_permission),
                                     onAction = {
                                         val permissions = listOf(
                                             Manifest.permission.ACCESS_COARSE_LOCATION,
