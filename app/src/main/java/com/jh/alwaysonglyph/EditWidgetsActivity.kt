@@ -56,20 +56,21 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
-import androidx.compose.ui.platform.LocalLifecycleOwner
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.core.content.ContextCompat
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleEventObserver
+import androidx.lifecycle.compose.LocalLifecycleOwner
 import com.jh.alwaysonglyph.R
+import com.jh.alwaysonglyph.BuildConfig
 import com.jh.alwaysonglyph.prefs.ClockPreferences
 import com.jh.alwaysonglyph.renderer.StatusWidget
 import com.jh.alwaysonglyph.renderer.StatusWidgetModule
 import com.jh.alwaysonglyph.renderer.description
 import com.jh.alwaysonglyph.renderer.displayName
-import com.jh.alwaysonglyph.service.UnreadNotificationListenerService
+import com.jh.alwaysonglyph.service.NotificationAccess
 import com.jh.alwaysonglyph.ui.theme.AlwaysOnGlyphTheme
 import com.jh.alwaysonglyph.weather.WeatherRepository
 import kotlinx.coroutines.launch
@@ -144,7 +145,7 @@ fun EditWidgetsScreen() {
 
     var enabled by remember { mutableStateOf(ClockPreferences.getEnabledWidgets(context)) }
     var notificationGranted by remember {
-        mutableStateOf(UnreadNotificationListenerService.isNotificationAccessGranted(context))
+        mutableStateOf(NotificationAccess.isAccessGranted(context))
     }
     var locationGranted by remember {
         mutableStateOf(WeatherRepository.hasLocationPermission(context))
@@ -160,7 +161,7 @@ fun EditWidgetsScreen() {
     DisposableEffect(lifecycleOwner) {
         val observer = LifecycleEventObserver { _, event ->
             if (event == Lifecycle.Event.ON_RESUME) {
-                notificationGranted = UnreadNotificationListenerService.isNotificationAccessGranted(context)
+                notificationGranted = NotificationAccess.isAccessGranted(context)
                 locationGranted = WeatherRepository.hasLocationPermission(context)
             }
         }
@@ -209,7 +210,12 @@ fun EditWidgetsScreen() {
                 contentPadding = PaddingValues(16.dp),
                 verticalArrangement = Arrangement.spacedBy(8.dp)
             ) {
-                items(StatusWidgetModule.DEFAULT_ORDER, key = { it.name }) { widget ->
+                items(
+                    StatusWidgetModule.DEFAULT_ORDER.filter {
+                        BuildConfig.HAS_NOTIFICATION || it != StatusWidget.NOTIFICATION
+                    },
+                    key = { it.name }
+                ) { widget ->
                     val included = widget in enabled
                     val showNotificationAlert =
                         widget == StatusWidget.NOTIFICATION && included && !notificationGranted

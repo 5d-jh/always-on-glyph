@@ -73,17 +73,17 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.FilterQuality
 import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.platform.LocalContext
-import androidx.compose.ui.platform.LocalLifecycleOwner
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.core.content.ContextCompat
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleEventObserver
+import androidx.lifecycle.compose.LocalLifecycleOwner
 import com.jh.alwaysonglyph.receiver.BatteryStateReceiver
 import com.jh.alwaysonglyph.renderer.MatrixCanvasRenderer
 import com.jh.alwaysonglyph.renderer.StatusData
 import com.jh.alwaysonglyph.renderer.StatusWidgetModule
-import com.jh.alwaysonglyph.service.UnreadNotificationListenerService
+import com.jh.alwaysonglyph.service.NotificationAccess
 import com.jh.alwaysonglyph.R
 import com.jh.alwaysonglyph.prefs.ClockPreferences
 import com.jh.alwaysonglyph.prefs.ClockStyle
@@ -243,7 +243,7 @@ fun GlyphClockHomeScreen() {
     fun refreshLiveData() {
         batteryLevel = BatteryStateReceiver.getBatteryPercentage(context)
         temperatureCelsius = BatteryStateReceiver.getTemperatureCelsius(context)
-        unreadCount = UnreadNotificationListenerService.getUnreadCount()
+        unreadCount = NotificationAccess.getUnreadCount()
         currentTime = LocalTime.now()
         statusWidget = ClockPreferences.getStatusWidget(context)
         activeWidgets = ClockPreferences.getActiveWidgets(context)
@@ -353,7 +353,7 @@ fun GlyphClockHomeScreen() {
                             style = MaterialTheme.typography.titleLarge
                         )
                     },
-                    colors = TopAppBarDefaults.centerAlignedTopAppBarColors(
+                    colors = TopAppBarDefaults.topAppBarColors(
                         containerColor = MaterialTheme.colorScheme.surface
                     )
                 )

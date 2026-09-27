@@ -186,7 +186,7 @@ class GlyphClockToyService : Service() {
     }
 
     private fun rotateStatusWidget() {
-        val unreadCount = UnreadNotificationListenerService.getUnreadCount()
+        val unreadCount = NotificationAccess.getUnreadCount()
         val widgets = ClockPreferences.getActiveWidgets(applicationContext)
         val current = ClockPreferences.getStatusWidget(applicationContext)
         val next = StatusWidgetModule.nextWidget(current, unreadCount, widgets)
@@ -212,7 +212,7 @@ class GlyphClockToyService : Service() {
             val time = LocalTime.now()
             val batteryLevel = BatteryStateReceiver.getBatteryPercentage(applicationContext)
             val temperature = BatteryStateReceiver.getTemperatureCelsius(applicationContext)
-            val unreadCount = UnreadNotificationListenerService.getUnreadCount()
+            val unreadCount = NotificationAccess.getUnreadCount()
             val weatherCelsius = WeatherRepository.currentTemperatureCelsius()
 
             val use24Hour = ClockPreferences.use24HourFormat(applicationContext)

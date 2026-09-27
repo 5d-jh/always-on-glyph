@@ -49,6 +49,20 @@ android {
     }
     buildFeatures {
         compose = true
+        buildConfig = true
+    }
+
+    flavorDimensions += "features"
+
+    productFlavors {
+        create("full") {
+            dimension = "features"
+            buildConfigField("boolean", "HAS_NOTIFICATION", "true")
+        }
+        create("lite") {
+            dimension = "features"
+            buildConfigField("boolean", "HAS_NOTIFICATION", "false")
+        }
     }
 }
 
@@ -63,6 +77,7 @@ dependencies {
     implementation(libs.androidx.compose.ui.tooling.preview)
     implementation(libs.androidx.core.ktx)
     implementation(libs.androidx.lifecycle.runtime.ktx)
+    implementation(libs.androidx.lifecycle.runtime.compose)
     implementation(libs.androidx.lifecycle.viewmodel.compose)
     testImplementation(libs.junit)
     androidTestImplementation(platform(libs.androidx.compose.bom))
