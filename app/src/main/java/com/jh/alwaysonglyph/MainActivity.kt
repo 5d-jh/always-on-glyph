@@ -6,45 +6,55 @@ import android.content.Intent
 import android.content.pm.PackageManager
 import android.os.Bundle
 import android.provider.Settings
+import android.view.View
 import android.widget.Toast
 import androidx.activity.ComponentActivity
+import androidx.activity.SystemBarStyle
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.compose.setContent
+import androidx.activity.enableEdgeToEdge
 import androidx.activity.result.contract.ActivityResultContracts
-import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.ColumnScope
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.WindowInsets
-import androidx.compose.foundation.layout.consumeWindowInsets
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.statusBars
-import androidx.compose.foundation.layout.statusBarsPadding
-import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.foundation.verticalScroll
+import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.KeyboardArrowRight
+import androidx.compose.material3.BottomAppBar
 import androidx.compose.material3.Button
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
-import androidx.compose.material3.Divider
+import androidx.compose.material3.CenterAlignedTopAppBar
 import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.HorizontalDivider
+import androidx.compose.material3.Icon
+import androidx.compose.material3.ListItem
+import androidx.compose.material3.ListItemDefaults
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Scaffold
+import androidx.compose.material3.SegmentedButton
+import androidx.compose.material3.SegmentedButtonDefaults
+import androidx.compose.material3.SingleChoiceSegmentedButtonRow
 import androidx.compose.material3.Slider
 import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.TimePicker
 import androidx.compose.material3.TimePickerDialog
+import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.material3.rememberTimePickerState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
@@ -55,17 +65,12 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.geometry.Size
-import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.FilterQuality
 import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.platform.LocalContext
-import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.LocalLifecycleOwner
-import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
 import androidx.core.content.ContextCompat
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleEventObserver
@@ -92,49 +97,58 @@ private data class SavedSettings(
 )
 
 @Composable
-private fun StatusBarProtection(
-    color: Color = MaterialTheme.colorScheme.background,
-) {
-    val density = LocalDensity.current
-    val gradientHeight = WindowInsets.statusBars.getTop(density).times(1.2f)
-    Canvas(modifier = Modifier.fillMaxSize()) {
-        drawRect(
-            brush = Brush.verticalGradient(
-                colors = listOf(
-                    color.copy(alpha = 1f),
-                    color.copy(alpha = 0.8f),
-                    Color.Transparent
-                ),
-                startY = 0f,
-                endY = gradientHeight
-            ),
-            size = Size(size.width, gradientHeight)
-        )
-    }
+private fun SectionHeader(title: String) {
+    Text(
+        text = title,
+        style = MaterialTheme.typography.titleSmall,
+        color = MaterialTheme.colorScheme.primary,
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(horizontal = 16.dp)
+            .padding(top = 24.dp, bottom = 8.dp)
+    )
 }
 
 @Composable
-private fun ClockStyleOption(
-    label: String,
-    selected: Boolean,
-    onClick: () -> Unit,
+private fun SettingsCard(
     modifier: Modifier = Modifier,
+    content: @Composable ColumnScope.() -> Unit,
 ) {
-    if (selected) {
-        Button(onClick = onClick, modifier = modifier) {
-            Text(label)
-        }
-    } else {
-        OutlinedButton(onClick = onClick, modifier = modifier) {
-            Text(label)
-        }
-    }
+    Card(
+        modifier = modifier.fillMaxWidth(),
+        shape = MaterialTheme.shapes.large,
+        colors = CardDefaults.cardColors(
+            containerColor = MaterialTheme.colorScheme.surfaceContainerLow
+        ),
+        content = content
+    )
+}
+
+@Composable
+private fun CardDivider() {
+    HorizontalDivider(
+        modifier = Modifier.padding(start = 16.dp),
+        color = MaterialTheme.colorScheme.outlineVariant
+    )
 }
 
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
+        enableEdgeToEdge(
+            statusBarStyle = SystemBarStyle.auto(
+                android.graphics.Color.TRANSPARENT,
+                android.graphics.Color.TRANSPARENT
+            ),
+            navigationBarStyle = SystemBarStyle.auto(
+                android.graphics.Color.TRANSPARENT,
+                android.graphics.Color.TRANSPARENT
+            )
+        )
         super.onCreate(savedInstanceState)
         window.isNavigationBarContrastEnforced = false
+        window.decorView.setImportantForContentCapture(
+            View.IMPORTANT_FOR_CONTENT_CAPTURE_NO_EXCLUDE_DESCENDANTS
+        )
         setContent {
             AlwaysOnGlyphTheme {
                 GlyphClockHomeScreen()
@@ -147,9 +161,7 @@ class MainActivity : ComponentActivity() {
 @Composable
 fun GlyphClockHomeScreen() {
     val context = LocalContext.current
-    val scrollState = rememberScrollState()
 
-    var isNotifGranted by remember { mutableStateOf(false) }
     var batteryLevel by remember { mutableStateOf(100) }
     var temperatureCelsius by remember { mutableStateOf(0) }
     var weatherCelsius by remember { mutableStateOf(WeatherRepository.currentTemperatureCelsius()) }
@@ -222,7 +234,6 @@ fun GlyphClockHomeScreen() {
     }
 
     fun refreshLiveData() {
-        isNotifGranted = UnreadNotificationListenerService.isNotificationAccessGranted(context)
         batteryLevel = BatteryStateReceiver.getBatteryPercentage(context)
         temperatureCelsius = BatteryStateReceiver.getTemperatureCelsius(context)
         unreadCount = UnreadNotificationListenerService.getUnreadCount()
@@ -274,457 +285,383 @@ fun GlyphClockHomeScreen() {
         onDispose { lifecycleOwner.lifecycle.removeObserver(observer) }
     }
 
-    Box(modifier = Modifier.fillMaxSize()) {
-        Scaffold(
-            topBar = {
+    val previewBitmap = remember(
+        currentTime, batteryLevel, temperatureCelsius, weatherCelsius, unreadCount,
+        use24Hour, clockStyle, statusWidget, activeWidgets
+    ) {
+        val data = StatusData(
+            batteryLevel = batteryLevel,
+            temperatureCelsius = temperatureCelsius,
+            weatherCelsius = weatherCelsius,
+            unreadNotifications = unreadCount
+        )
+        when (clockStyle) {
+            ClockStyle.DIGITAL -> MatrixCanvasRenderer.renderFrame(
+                time = currentTime,
+                use24Hour = use24Hour,
+                widget = statusWidget,
+                data = data,
+                widgets = activeWidgets
+            )
+            ClockStyle.ANALOG -> MatrixCanvasRenderer.renderAnalogFrame(
+                time = currentTime,
+                use24Hour = use24Hour,
+                widget = statusWidget,
+                data = data,
+                widgets = activeWidgets
+            )
+        }
+    }
+    val previewImage = remember(previewBitmap) { previewBitmap.asImageBitmap() }
+
+    Scaffold(
+        topBar = {
+            CenterAlignedTopAppBar(
+                title = {
+                    Text(
+                        text = "Glyph Matrix Status Toy",
+                        style = MaterialTheme.typography.titleLarge
+                    )
+                },
+                colors = TopAppBarDefaults.centerAlignedTopAppBarColors(
+                    containerColor = MaterialTheme.colorScheme.surface
+                )
+            )
+        },
+        bottomBar = {
             if (isDirty) {
-                Row(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .background(MaterialTheme.colorScheme.surface)
-                        .statusBarsPadding()
-                        .padding(horizontal = 4.dp, vertical = 4.dp),
-                    verticalAlignment = Alignment.CenterVertically
+                BottomAppBar(
+                    containerColor = MaterialTheme.colorScheme.surface,
                 ) {
-                    TextButton(onClick = { cancelChanges() }) {
-                        Text("Cancel")
-                    }
-                    Spacer(modifier = Modifier.weight(1f))
-                    Button(
-                        onClick = { applyChanges() },
-                        shape = RoundedCornerShape(50)
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.spacedBy(12.dp),
+                        verticalAlignment = Alignment.CenterVertically
                     ) {
-                        Text("Apply")
+                        OutlinedButton(
+                            onClick = { cancelChanges() },
+                            modifier = Modifier.weight(1f)
+                        ) {
+                            Text("Cancel")
+                        }
+                        Button(
+                            onClick = { applyChanges() },
+                            modifier = Modifier.weight(1f)
+                        ) {
+                            Text("Apply")
+                        }
                     }
                 }
             }
         }
     ) { innerPadding ->
-    Column(
-        modifier = Modifier
-            .fillMaxSize()
-            .consumeWindowInsets(innerPadding)
-            .verticalScroll(scrollState)
-            .padding(innerPadding)
-            .padding(16.dp),
-        horizontalAlignment = Alignment.CenterHorizontally
-    ) {
-        Text(
-            text = "Glyph Matrix Status Toy",
-            style = MaterialTheme.typography.headlineMedium,
-            fontWeight = FontWeight.Bold,
-            color = MaterialTheme.colorScheme.primary
-        )
-
-        Spacer(modifier = Modifier.height(4.dp))
-
-        Text(
-            text = "Flip to Glyph Clock & Status Display",
-            style = MaterialTheme.typography.bodyMedium,
-            color = Color.Gray
-        )
-
-        Spacer(modifier = Modifier.height(16.dp))
-
-        // Clock Settings Card
-        Card(
-            modifier = Modifier.fillMaxWidth(),
-            shape = RoundedCornerShape(16.dp)
+        LazyColumn(
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(innerPadding),
+            contentPadding = PaddingValues(vertical = 8.dp)
         ) {
-            Row(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(16.dp),
-                horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = Alignment.CenterVertically
-            ) {
+            item {
                 Text(
-                    text = "24시간제 사용",
-                    style = MaterialTheme.typography.titleMedium,
-                    fontWeight = FontWeight.Bold
-                )
-
-                Switch(
-                    checked = use24Hour,
-                    onCheckedChange = { checked ->
-                        use24Hour = checked
-                        isDirty = true
-                        currentTime = LocalTime.now()
-                    }
-                )
-            }
-        }
-
-        Spacer(modifier = Modifier.height(16.dp))
-
-        // Clock Style Card
-        Card(
-            modifier = Modifier.fillMaxWidth(),
-            shape = RoundedCornerShape(16.dp)
-        ) {
-            Column(modifier = Modifier.padding(16.dp)) {
-                Text(
-                    text = "시계 스타일",
-                    style = MaterialTheme.typography.titleMedium,
-                    fontWeight = FontWeight.Bold
-                )
-
-                Spacer(modifier = Modifier.height(8.dp))
-
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.spacedBy(8.dp)
-                ) {
-                    ClockStyleOption(
-                        label = "디지털",
-                        selected = clockStyle == ClockStyle.DIGITAL,
-                        onClick = {
-                            clockStyle = ClockStyle.DIGITAL
-                            isDirty = true
-                        },
-                        modifier = Modifier.weight(1f)
-                    )
-                    ClockStyleOption(
-                        label = "아날로그",
-                        selected = clockStyle == ClockStyle.ANALOG,
-                        onClick = {
-                            clockStyle = ClockStyle.ANALOG
-                            isDirty = true
-                        },
-                        modifier = Modifier.weight(1f)
-                    )
-                }
-            }
-        }
-
-        Spacer(modifier = Modifier.height(16.dp))
-
-        // Brightness Card
-        Card(
-            modifier = Modifier.fillMaxWidth(),
-            shape = RoundedCornerShape(16.dp)
-        ) {
-            Column(modifier = Modifier.padding(16.dp)) {
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.SpaceBetween,
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    Text(
-                        text = "Glyph 밝기",
-                        style = MaterialTheme.typography.titleMedium,
-                        fontWeight = FontWeight.Bold
-                    )
-
-                    Text(
-                        text = brightness.toInt().toString(),
-                        style = MaterialTheme.typography.bodyMedium,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant
-                    )
-                }
-
-                Slider(
-                    value = brightness,
-                    onValueChange = { value ->
-                        brightness = value
-                        isDirty = true
-                    },
-                    valueRange = 0f..255f,
-                    modifier = Modifier.fillMaxWidth()
-                )
-            }
-        }
-
-        Spacer(modifier = Modifier.height(16.dp))
-
-        // AOD Disable Schedule Card
-        Card(
-            modifier = Modifier.fillMaxWidth(),
-            shape = RoundedCornerShape(16.dp)
-        ) {
-            Column(modifier = Modifier.padding(16.dp)) {
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.SpaceBetween,
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    Text(
-                        text = "특정 시간에 Always-on Glyph 끄기",
-                        style = MaterialTheme.typography.titleMedium,
-                        fontWeight = FontWeight.Bold
-                    )
-
-                    Switch(
-                        checked = disableEnabled,
-                        onCheckedChange = { checked ->
-                            disableEnabled = checked
-                            isDirty = true
-                        }
-                    )
-                }
-
-                if (disableEnabled) {
-                    Spacer(modifier = Modifier.height(8.dp))
-
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.spacedBy(8.dp)
-                    ) {
-                        OutlinedButton(
-                            onClick = { showStartPicker = true },
-                            modifier = Modifier.weight(1f)
-                        ) {
-                            Text("시작 ${ClockPreferences.minutesToTimeString(disableStartMinutes)}")
-                        }
-
-                        OutlinedButton(
-                            onClick = { showEndPicker = true },
-                            modifier = Modifier.weight(1f)
-                        ) {
-                            Text("종료 ${ClockPreferences.minutesToTimeString(disableEndMinutes)}")
-                        }
-                    }
-
-                    Spacer(modifier = Modifier.height(4.dp))
-
-                    Text(
-                        text = "이 시간대에는 Flip to Glyph(Always-on)가 꺼집니다.",
-                        style = MaterialTheme.typography.bodySmall,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant
-                    )
-                }
-            }
-        }
-
-        Spacer(modifier = Modifier.height(16.dp))
-
-        // Turn off on wake Card
-        Card(
-            modifier = Modifier.fillMaxWidth(),
-            shape = RoundedCornerShape(16.dp)
-        ) {
-            Row(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(16.dp),
-                horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                Text(
-                    text = "화면 켜지면 Glyph 끄기",
-                    style = MaterialTheme.typography.titleMedium,
-                    fontWeight = FontWeight.Bold
-                )
-
-                Switch(
-                    checked = turnOffOnWake,
-                    onCheckedChange = { checked ->
-                        turnOffOnWake = checked
-                        isDirty = true
-                    }
-                )
-            }
-        }
-
-        Spacer(modifier = Modifier.height(16.dp))
-
-        // Matrix Live Preview Card
-        Card(
-            modifier = Modifier.fillMaxWidth(),
-            shape = RoundedCornerShape(16.dp),
-            colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant)
-        ) {
-            Column(
-                modifier = Modifier.padding(16.dp),
-                horizontalAlignment = Alignment.CenterHorizontally
-            ) {
-                Text(
-                    text = "Matrix Display Live Preview (25x25)",
-                    style = MaterialTheme.typography.titleMedium,
-                    fontWeight = FontWeight.Bold
-                )
-
-                Spacer(modifier = Modifier.height(12.dp))
-
-                // Render 25x25 matrix bitmap preview
-                val previewBitmap = remember(currentTime, batteryLevel, temperatureCelsius, weatherCelsius, unreadCount, use24Hour, clockStyle, statusWidget, activeWidgets) {
-                    val data = StatusData(
-                        batteryLevel = batteryLevel,
-                        temperatureCelsius = temperatureCelsius,
-                        weatherCelsius = weatherCelsius,
-                        unreadNotifications = unreadCount
-                    )
-                    when (clockStyle) {
-                        ClockStyle.DIGITAL -> MatrixCanvasRenderer.renderFrame(
-                            time = currentTime,
-                            use24Hour = use24Hour,
-                            widget = statusWidget,
-                            data = data,
-                            widgets = activeWidgets
-                        )
-                        ClockStyle.ANALOG -> MatrixCanvasRenderer.renderAnalogFrame(
-                            time = currentTime,
-                            use24Hour = use24Hour,
-                            widget = statusWidget,
-                            data = data,
-                            widgets = activeWidgets
-                        )
-                    }
-                }
-
-                Box(
+                    text = "Flip to Glyph Clock & Status Display",
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
                     modifier = Modifier
-                        .size(200.dp)
-                        .background(Color.Black, RoundedCornerShape(12.dp)),
-                    contentAlignment = Alignment.Center
-                ) {
-                    Image(
-                        bitmap = previewBitmap.asImageBitmap(),
-                        contentDescription = "Matrix Preview",
-                        modifier = Modifier.size(180.dp),
-                        filterQuality = FilterQuality.None // Pixel art nearest neighbor rendering
-                    )
-                }
-
-                Spacer(modifier = Modifier.height(12.dp))
-
-                Text(
-                    text = "Time: ${formatTimeLabel(currentTime)} | Battery: $batteryLevel% | Temp: ${temperatureCelsius}° | Weather: ${weatherCelsius?.let { "${it}°" } ?: "--"} | Unread: $unreadCount | Widget: ${statusWidget.name}",
-                    style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                        .fillMaxWidth()
+                        .padding(horizontal = 16.dp),
+                    textAlign = androidx.compose.ui.text.style.TextAlign.Center
                 )
+            }
 
-                Spacer(modifier = Modifier.height(8.dp))
+            item { SectionHeader("Glyph 동작") }
 
-                Row(
-                    horizontalArrangement = Arrangement.spacedBy(8.dp)
-                ) {
-                    Button(onClick = {
-                        refreshLiveData()
-                        ensureLocationPermission()
-                    }) {
-                        Text("Refresh Preview")
-                    }
-                    OutlinedButton(
-                        onClick = {
-                            statusWidget = StatusWidgetModule.nextWidget(statusWidget, unreadCount, activeWidgets)
-                            ClockPreferences.setStatusWidget(context, statusWidget)
-                        }
+            item {
+                SettingsCard(modifier = Modifier.padding(horizontal = 16.dp)) {
+                    Column(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(horizontal = 16.dp, vertical = 8.dp)
                     ) {
-                        Text("Widget: ${statusWidget.name}")
-                    }
-                }
-
-                Spacer(modifier = Modifier.height(8.dp))
-
-                TextButton(
-                    onClick = { context.startActivity(Intent(context, EditWidgetsActivity::class.java)) },
-                    modifier = Modifier.fillMaxWidth()
-                ) {
-                    Text("Edit Widgets")
-                }
-            }
-        }
-
-        Spacer(modifier = Modifier.height(16.dp))
-
-        // Nothing OS Settings Card
-        Card(
-            modifier = Modifier.fillMaxWidth(),
-            shape = RoundedCornerShape(16.dp)
-        ) {
-            Column(modifier = Modifier.padding(16.dp)) {
-                Text(
-                    text = "1. Nothing OS Flip to Glyph Settings",
-                    style = MaterialTheme.typography.titleMedium,
-                    fontWeight = FontWeight.Bold
-                )
-
-                Spacer(modifier = Modifier.height(8.dp))
-
-                Text(
-                    text = "To enable this clock when phone is locked and flipped, select 'Clock & Status Matrix' in Nothing OS Settings > Glyph Interface > Flip to Glyph > Always-on Glyph Toy.",
-                    style = MaterialTheme.typography.bodyMedium
-                )
-
-                Spacer(modifier = Modifier.height(12.dp))
-
-                Button(
-                    onClick = {
-                        try {
-                            val intent = Intent().apply {
-                                component = ComponentName(
-                                    "com.nothing.thirdparty",
-                                    "com.nothing.thirdparty.matrix.toys.manager.ToysManagerActivity"
-                                )
-                            }
-                            context.startActivity(intent)
-                        } catch (e: Exception) {
-                            Toast.makeText(
-                                context,
-                                "Opening Nothing OS Toys Manager (Go to Settings > Glyph Interface)",
-                                Toast.LENGTH_LONG
-                            ).show()
-                            context.startActivity(Intent(Settings.ACTION_SETTINGS))
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.SpaceBetween,
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Text(
+                                text = "Glyph 밝기",
+                                style = MaterialTheme.typography.titleMedium
+                            )
+                            Text(
+                                text = brightness.toInt().toString(),
+                                style = MaterialTheme.typography.bodyMedium,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant
+                            )
                         }
-                    },
-                    modifier = Modifier.fillMaxWidth()
-                ) {
-                    Text("Manage Glyph Toys in Settings")
+
+                        Slider(
+                            value = brightness,
+                            onValueChange = { value ->
+                                brightness = value
+                                isDirty = true
+                            },
+                            valueRange = 0f..255f,
+                            modifier = Modifier.fillMaxWidth()
+                        )
+                    }
+
+                    CardDivider()
+
+                    Column(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(horizontal = 16.dp, vertical = 8.dp)
+                    ) {
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.SpaceBetween,
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Text(
+                                text = "특정 시간에 Always-on Glyph 끄기",
+                                style = MaterialTheme.typography.titleMedium
+                            )
+                            Switch(
+                                checked = disableEnabled,
+                                onCheckedChange = { checked ->
+                                    disableEnabled = checked
+                                    isDirty = true
+                                }
+                            )
+                        }
+
+                        if (disableEnabled) {
+                            Spacer(modifier = Modifier.height(8.dp))
+
+                            Row(
+                                modifier = Modifier.fillMaxWidth(),
+                                horizontalArrangement = Arrangement.spacedBy(8.dp)
+                            ) {
+                                OutlinedButton(
+                                    onClick = { showStartPicker = true },
+                                    modifier = Modifier.weight(1f)
+                                ) {
+                                    Text("시작 ${ClockPreferences.minutesToTimeString(disableStartMinutes)}")
+                                }
+
+                                OutlinedButton(
+                                    onClick = { showEndPicker = true },
+                                    modifier = Modifier.weight(1f)
+                                ) {
+                                    Text("종료 ${ClockPreferences.minutesToTimeString(disableEndMinutes)}")
+                                }
+                            }
+
+                            Spacer(modifier = Modifier.height(4.dp))
+
+                            Text(
+                                text = "이 시간대에는 Flip to Glyph(Always-on)가 꺼집니다.",
+                                style = MaterialTheme.typography.bodySmall,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant
+                            )
+                        }
+                    }
+
+                    CardDivider()
+
+                    ListItem(
+                        colors = ListItemDefaults.colors(containerColor = Color.Transparent),
+                        headlineContent = {
+                            Text(
+                                text = "화면 켜지면 Glyph 끄기",
+                                style = MaterialTheme.typography.titleMedium
+                            )
+                        },
+                        trailingContent = {
+                            Switch(
+                                checked = turnOffOnWake,
+                                onCheckedChange = { checked ->
+                                    turnOffOnWake = checked
+                                    isDirty = true
+                                }
+                            )
+                        }
+                    )
+
+                    CardDivider()
+
+                    Text(
+                        text = "To enable this clock when phone is locked and flipped, select 'Clock & Status Matrix' in Nothing OS Settings > Glyph Interface > Flip to Glyph > Always-on Glyph Toy.",
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(horizontal = 16.dp, vertical = 12.dp)
+                    )
+
+                    ListItem(
+                        colors = ListItemDefaults.colors(containerColor = Color.Transparent),
+                        headlineContent = {
+                            Text(
+                                text = "Manage Glyph Toys in Settings",
+                                style = MaterialTheme.typography.titleMedium
+                            )
+                        },
+                        trailingContent = {
+                            Icon(
+                                imageVector = Icons.AutoMirrored.Filled.KeyboardArrowRight,
+                                contentDescription = null,
+                                tint = MaterialTheme.colorScheme.onSurfaceVariant
+                            )
+                        },
+                        modifier = Modifier.clickable {
+                            try {
+                                val intent = Intent().apply {
+                                    component = ComponentName(
+                                        "com.nothing.thirdparty",
+                                        "com.nothing.thirdparty.matrix.toys.manager.ToysManagerActivity"
+                                    )
+                                }
+                                context.startActivity(intent)
+                            } catch (e: Exception) {
+                                Toast.makeText(
+                                    context,
+                                    "Opening Nothing OS Toys Manager (Go to Settings > Glyph Interface)",
+                                    Toast.LENGTH_LONG
+                                ).show()
+                                context.startActivity(Intent(Settings.ACTION_SETTINGS))
+                            }
+                        }
+                    )
+                }
+            }
+
+            item { SectionHeader("Glyph 모양") }
+
+            item {
+                SettingsCard(modifier = Modifier.padding(horizontal = 16.dp)) {
+                    ListItem(
+                        colors = ListItemDefaults.colors(containerColor = Color.Transparent),
+                        headlineContent = {
+                            Text(
+                                text = "24시간제 사용",
+                                style = MaterialTheme.typography.titleMedium
+                            )
+                        },
+                        trailingContent = {
+                            Switch(
+                                checked = use24Hour,
+                                onCheckedChange = { checked ->
+                                    use24Hour = checked
+                                    isDirty = true
+                                    currentTime = LocalTime.now()
+                                }
+                            )
+                        }
+                    )
+
+                    CardDivider()
+
+                    SingleChoiceSegmentedButtonRow(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(horizontal = 16.dp, vertical = 12.dp)
+                    ) {
+                        SegmentedButton(
+                            selected = clockStyle == ClockStyle.DIGITAL,
+                            onClick = {
+                                clockStyle = ClockStyle.DIGITAL
+                                isDirty = true
+                            },
+                            shape = SegmentedButtonDefaults.itemShape(index = 0, count = 2),
+                            label = { Text("디지털") }
+                        )
+                        SegmentedButton(
+                            selected = clockStyle == ClockStyle.ANALOG,
+                            onClick = {
+                                clockStyle = ClockStyle.ANALOG
+                                isDirty = true
+                            },
+                            shape = SegmentedButtonDefaults.itemShape(index = 1, count = 2),
+                            label = { Text("아날로그") }
+                        )
+                    }
+
+                    CardDivider()
+
+                    Column(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(16.dp),
+                        horizontalAlignment = Alignment.CenterHorizontally
+                    ) {
+                        Box(
+                            modifier = Modifier
+                                .size(200.dp)
+                                .background(Color.Black, MaterialTheme.shapes.medium),
+                            contentAlignment = Alignment.Center
+                        ) {
+                            Image(
+                                bitmap = previewImage,
+                                contentDescription = "Matrix Preview",
+                                modifier = Modifier.size(180.dp),
+                                filterQuality = FilterQuality.None // Pixel art nearest neighbor rendering
+                            )
+                        }
+
+                        Spacer(modifier = Modifier.height(12.dp))
+
+                        Text(
+                            text = "Time: ${formatTimeLabel(currentTime)} | Battery: $batteryLevel% | Temp: ${temperatureCelsius}° | Weather: ${weatherCelsius?.let { "${it}°" } ?: "--"} | Unread: $unreadCount | Widget: ${statusWidget.name}",
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+
+                        Spacer(modifier = Modifier.height(8.dp))
+
+                        Row(
+                            horizontalArrangement = Arrangement.spacedBy(8.dp)
+                        ) {
+                            Button(onClick = {
+                                refreshLiveData()
+                                ensureLocationPermission()
+                            }) {
+                                Text("Refresh Preview")
+                            }
+                            OutlinedButton(
+                                onClick = {
+                                    statusWidget = StatusWidgetModule.nextWidget(statusWidget, unreadCount, activeWidgets)
+                                    ClockPreferences.setStatusWidget(context, statusWidget)
+                                }
+                            ) {
+                                Text("Widget: ${statusWidget.name}")
+                            }
+                        }
+                    }
+
+                    CardDivider()
+
+                    ListItem(
+                        colors = ListItemDefaults.colors(containerColor = Color.Transparent),
+                        headlineContent = {
+                            Text(
+                                text = "Edit Widgets",
+                                style = MaterialTheme.typography.titleMedium
+                            )
+                        },
+                        trailingContent = {
+                            Icon(
+                                imageVector = Icons.AutoMirrored.Filled.KeyboardArrowRight,
+                                contentDescription = null,
+                                tint = MaterialTheme.colorScheme.onSurfaceVariant
+                            )
+                        },
+                        modifier = Modifier.clickable {
+                            context.startActivity(Intent(context, EditWidgetsActivity::class.java))
+                        }
+                    )
                 }
             }
         }
-
-        Spacer(modifier = Modifier.height(16.dp))
-
-        // Notification Access Card
-        Card(
-            modifier = Modifier.fillMaxWidth(),
-            shape = RoundedCornerShape(16.dp)
-        ) {
-            Column(modifier = Modifier.padding(16.dp)) {
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.SpaceBetween,
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    Text(
-                        text = "2. Unread Notification Count Access",
-                        style = MaterialTheme.typography.titleMedium,
-                        fontWeight = FontWeight.Bold
-                    )
-
-                    Text(
-                        text = if (isNotifGranted) "Granted" else "Not Granted",
-                        color = if (isNotifGranted) Color(0xFF4CAF50) else Color(0xFFE53935),
-                        fontWeight = FontWeight.Bold,
-                        fontSize = 12.sp
-                    )
-                }
-
-                Spacer(modifier = Modifier.height(8.dp))
-
-                Text(
-                    text = "Notification Access is required to show the unread count (· N) on the matrix instead of battery %.",
-                    style = MaterialTheme.typography.bodyMedium
-                )
-
-                Spacer(modifier = Modifier.height(12.dp))
-
-                OutlinedButton(
-                    onClick = {
-                        val intent = Intent(Settings.ACTION_NOTIFICATION_LISTENER_SETTINGS)
-                        context.startActivity(intent)
-                    },
-                    modifier = Modifier.fillMaxWidth()
-                ) {
-                    Text(if (isNotifGranted) "Change Notification Settings" else "Grant Notification Access")
-                }
-            }
-        }
-    }
-        }
-        StatusBarProtection()
     }
 
     if (showStartPicker) {

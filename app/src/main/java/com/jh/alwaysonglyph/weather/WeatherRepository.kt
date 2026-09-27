@@ -36,6 +36,14 @@ object WeatherRepository {
 
     fun currentTemperatureCelsius(): Int? = cachedTemperature
 
+    fun hasLocationPermission(context: Context): Boolean =
+        ContextCompat.checkSelfPermission(
+            context, Manifest.permission.ACCESS_COARSE_LOCATION
+        ) == PackageManager.PERMISSION_GRANTED ||
+            ContextCompat.checkSelfPermission(
+                context, Manifest.permission.ACCESS_FINE_LOCATION
+            ) == PackageManager.PERMISSION_GRANTED
+
     fun isStale(): Boolean =
         System.currentTimeMillis() - lastFetchTime > REFRESH_INTERVAL_MS
 
@@ -82,13 +90,7 @@ object WeatherRepository {
 
     @SuppressLint("MissingPermission")
     private fun deviceLocation(context: Context): Pair<Double, Double>? {
-        val hasPermission = ContextCompat.checkSelfPermission(
-            context, Manifest.permission.ACCESS_COARSE_LOCATION
-        ) == PackageManager.PERMISSION_GRANTED ||
-            ContextCompat.checkSelfPermission(
-                context, Manifest.permission.ACCESS_FINE_LOCATION
-            ) == PackageManager.PERMISSION_GRANTED
-        if (!hasPermission) return null
+        if (!hasLocationPermission(context)) return null
 
         val manager = context.getSystemService(Context.LOCATION_SERVICE) as? LocationManager ?: return null
         val providers = listOf(
