@@ -137,4 +137,35 @@ class MatrixCanvasRendererTest {
         assertEquals(StatusWidget.TEMPERATURE, StatusWidgetModule.effectiveWidget(StatusWidget.TEMPERATURE, 0))
         assertEquals(StatusWidget.WEATHER, StatusWidgetModule.effectiveWidget(StatusWidget.WEATHER, 0))
     }
+
+    @Test
+    fun testCustomWidgetOrder() {
+        val custom = listOf(
+            StatusWidget.WEATHER,
+            StatusWidget.TEMPERATURE,
+            StatusWidget.BATTERY,
+            StatusWidget.NOTIFICATION
+        )
+        assertEquals(
+            listOf(StatusWidget.WEATHER, StatusWidget.TEMPERATURE, StatusWidget.BATTERY),
+            StatusWidgetModule.availableWidgets(0, custom)
+        )
+        assertEquals(
+            listOf(
+                StatusWidget.NOTIFICATION,
+                StatusWidget.WEATHER,
+                StatusWidget.TEMPERATURE,
+                StatusWidget.BATTERY
+            ),
+            StatusWidgetModule.availableWidgets(1, custom)
+        )
+        assertEquals(StatusWidget.TEMPERATURE, StatusWidgetModule.nextWidget(StatusWidget.WEATHER, 0, custom))
+    }
+
+    @Test
+    fun testNotificationShownFirstWithoutNotificationWidgetEnabled() {
+        val noNotification = listOf(StatusWidget.BATTERY, StatusWidget.TEMPERATURE, StatusWidget.WEATHER)
+        assertEquals(noNotification, StatusWidgetModule.availableWidgets(5, noNotification))
+        assertEquals(noNotification, StatusWidgetModule.availableWidgets(0, noNotification))
+    }
 }

@@ -223,7 +223,8 @@ object MatrixCanvasRenderer {
         time: LocalTime = LocalTime.now(),
         use24Hour: Boolean = true,
         widget: StatusWidget = StatusWidget.BATTERY,
-        data: StatusData = StatusData()
+        data: StatusData = StatusData(),
+        widgets: List<StatusWidget> = StatusWidgetModule.DEFAULT_ORDER
     ): Bitmap {
         val bitmap = Bitmap.createBitmap(25, 25, Bitmap.Config.ARGB_8888)
         bitmap.eraseColor(Color.BLACK)
@@ -235,7 +236,7 @@ object MatrixCanvasRenderer {
         drawText(bitmap, timeStr, startY = 6, font = FONT_5X7)
 
         // Bottom: status widget at Y = 17 (Height = 5px)
-        drawText(bitmap, statusText(widget, data), startY = 17, font = FONT_3X5)
+        drawText(bitmap, statusText(widget, data, widgets), startY = 17, font = FONT_3X5)
 
         return bitmap
     }
@@ -254,7 +255,8 @@ object MatrixCanvasRenderer {
         time: LocalTime = LocalTime.now(),
         use24Hour: Boolean = true,
         widget: StatusWidget = StatusWidget.BATTERY,
-        data: StatusData = StatusData()
+        data: StatusData = StatusData(),
+        widgets: List<StatusWidget> = StatusWidgetModule.DEFAULT_ORDER
     ): Bitmap {
         val bitmap = Bitmap.createBitmap(25, 25, Bitmap.Config.ARGB_8888)
         bitmap.eraseColor(Color.BLACK)
@@ -287,7 +289,7 @@ object MatrixCanvasRenderer {
         drawTextCentered(bitmap, hourText, centerY = 8, font = FONT_5X7)
 
         // 4. Status widget, centered
-        drawTextCentered(bitmap, statusText(widget, data), centerY = 16, font = FONT_3X5)
+        drawTextCentered(bitmap, statusText(widget, data, widgets), centerY = 16, font = FONT_3X5)
 
         return bitmap
     }
@@ -296,9 +298,9 @@ object MatrixCanvasRenderer {
      * Shared status widget text for the bottom area, resolving the effective
      * widget (e.g. notification falls back to battery when nothing is unread).
      */
-    private fun statusText(widget: StatusWidget, data: StatusData): String =
+    private fun statusText(widget: StatusWidget, data: StatusData, widgets: List<StatusWidget>): String =
         StatusWidgetModule.text(
-            StatusWidgetModule.effectiveWidget(widget, data.unreadNotifications),
+            StatusWidgetModule.effectiveWidget(widget, data.unreadNotifications, widgets),
             data
         )
 

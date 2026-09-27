@@ -10,4 +10,5 @@
     <string name="results_placeholder">(Results will appear here)</string>
     <string name="toy_name">Clock &amp; Status Matrix</string>
     <string name="toy_summary">Displays HHmm time and battery / notification count on Glyph Matrix when locked and flipped.</string>
+    <string name="widgets_title">Edit Widgets</string>
 </resources>

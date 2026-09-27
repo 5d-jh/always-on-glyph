@@ -31,6 +31,12 @@
             </intent-filter>
         </activity>
 
+        <activity
+            android:name=".EditWidgetsActivity"
+            android:exported="false"
+            android:label="@string/widgets_title"
+            android:theme="@style/Theme.AlwaysOnGlyph" />
+
         <!-- Glyph Toy Service for Nothing OS Flip-to-Glyph Matrix -->
         <service
             android:name=".service.GlyphClockToyService"

@@ -187,8 +187,9 @@ class GlyphClockToyService : Service() {
 
     private fun rotateStatusWidget() {
         val unreadCount = UnreadNotificationListenerService.getUnreadCount()
+        val widgets = ClockPreferences.getActiveWidgets(applicationContext)
         val current = ClockPreferences.getStatusWidget(applicationContext)
-        val next = StatusWidgetModule.nextWidget(current, unreadCount)
+        val next = StatusWidgetModule.nextWidget(current, unreadCount, widgets)
         ClockPreferences.setStatusWidget(applicationContext, next)
         updateMatrixDisplay()
     }
@@ -217,6 +218,7 @@ class GlyphClockToyService : Service() {
             val use24Hour = ClockPreferences.use24HourFormat(applicationContext)
             val style = ClockPreferences.getClockStyle(applicationContext)
             val widget = ClockPreferences.getStatusWidget(applicationContext)
+            val widgets = ClockPreferences.getActiveWidgets(applicationContext)
             val data = StatusData(
                 batteryLevel = batteryLevel,
                 temperatureCelsius = temperature,
@@ -228,13 +230,15 @@ class GlyphClockToyService : Service() {
                     time = time,
                     use24Hour = use24Hour,
                     widget = widget,
-                    data = data
+                    data = data,
+                    widgets = widgets
                 )
                 ClockStyle.ANALOG -> MatrixCanvasRenderer.renderAnalogFrame(
                     time = time,
                     use24Hour = use24Hour,
                     widget = widget,
-                    data = data
+                    data = data,
+                    widgets = widgets
                 )
             }
 

@@ -3,6 +3,7 @@ package com.jh.alwaysonglyph.prefs
 import android.content.Context
 import android.content.SharedPreferences
 import com.jh.alwaysonglyph.renderer.StatusWidget
+import com.jh.alwaysonglyph.renderer.StatusWidgetModule
 
 enum class ClockStyle { DIGITAL, ANALOG }
 
@@ -16,6 +17,7 @@ object ClockPreferences {
     private const val KEY_CLOCK_STYLE = "clock_style"
     private const val KEY_STATUS_WIDGET = "status_widget"
     private const val KEY_TURN_OFF_ON_WAKE = "turn_off_on_wake"
+    private const val KEY_ENABLED_WIDGETS = "enabled_widgets"
 
     private const val DEFAULT_BRIGHTNESS = 200
     private const val DEFAULT_DISABLE_START_MINUTES = 22 * 60
@@ -55,6 +57,32 @@ object ClockPreferences {
 
     fun setStatusWidget(context: Context, widget: StatusWidget) {
         prefs(context).edit().putString(KEY_STATUS_WIDGET, widget.name).apply()
+    }
+
+    /** The set of widgets the user wants included in the rotation. */
+    fun getEnabledWidgets(context: Context): Set<StatusWidget> {
+        val csv = prefs(context).getString(KEY_ENABLED_WIDGETS, null)
+            ?: return StatusWidget.entries.toSet()
+        val enabled = csv.split(",").mapNotNull { name ->
+            StatusWidget.entries.firstOrNull { it.name == name }
+        }.toSet()
+        return if (enabled.isEmpty()) StatusWidget.entries.toSet() else enabled
+    }
+
+    fun setEnabledWidgets(context: Context, enabled: Set<StatusWidget>) {
+        prefs(context).edit().putString(KEY_ENABLED_WIDGETS, enabled.joinToString(",") { it.name }).apply()
+    }
+
+    /**
+     * The widgets actually shown in the rotation: the fixed default order
+     * filtered to the enabled set. Never empty (falls back to the default
+     * order). The notification widget is still bumped to the front by
+     * [StatusWidgetModule.availableWidgets] while there are unread items.
+     */
+    fun getActiveWidgets(context: Context): List<StatusWidget> {
+        val enabled = getEnabledWidgets(context)
+        val active = StatusWidgetModule.DEFAULT_ORDER.filter { it in enabled }
+        return if (active.isEmpty()) StatusWidgetModule.DEFAULT_ORDER else active
     }
 
     fun isTurnOffOnWakeEnabled(context: Context): Boolean =

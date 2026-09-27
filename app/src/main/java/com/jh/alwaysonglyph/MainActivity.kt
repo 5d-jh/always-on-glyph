@@ -47,6 +47,7 @@ import androidx.compose.material3.TimePicker
 import androidx.compose.material3.TimePickerDialog
 import androidx.compose.material3.rememberTimePickerState
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -61,10 +62,13 @@ import androidx.compose.ui.graphics.FilterQuality
 import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.platform.LocalLifecycleOwner
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.core.content.ContextCompat
+import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.LifecycleEventObserver
 import com.jh.alwaysonglyph.receiver.BatteryStateReceiver
 import com.jh.alwaysonglyph.renderer.MatrixCanvasRenderer
 import com.jh.alwaysonglyph.renderer.StatusData
@@ -152,6 +156,7 @@ fun GlyphClockHomeScreen() {
     var unreadCount by remember { mutableStateOf(0) }
     var currentTime by remember { mutableStateOf(LocalTime.now()) }
     var statusWidget by remember { mutableStateOf(ClockPreferences.getStatusWidget(context)) }
+    var activeWidgets by remember { mutableStateOf(ClockPreferences.getActiveWidgets(context)) }
 
     var saved by remember {
         mutableStateOf(
@@ -223,6 +228,7 @@ fun GlyphClockHomeScreen() {
         unreadCount = UnreadNotificationListenerService.getUnreadCount()
         currentTime = LocalTime.now()
         statusWidget = ClockPreferences.getStatusWidget(context)
+        activeWidgets = ClockPreferences.getActiveWidgets(context)
     }
 
     fun refreshWeather() {
@@ -255,6 +261,17 @@ fun GlyphClockHomeScreen() {
         WeatherRepository.loadCache(context)
         weatherCelsius = WeatherRepository.currentTemperatureCelsius()
         refreshLiveData()
+    }
+
+    val lifecycleOwner = LocalLifecycleOwner.current
+    DisposableEffect(lifecycleOwner) {
+        val observer = LifecycleEventObserver { _, event ->
+            if (event == Lifecycle.Event.ON_RESUME) {
+                refreshLiveData()
+            }
+        }
+        lifecycleOwner.lifecycle.addObserver(observer)
+        onDispose { lifecycleOwner.lifecycle.removeObserver(observer) }
     }
 
     Box(modifier = Modifier.fillMaxSize()) {
@@ -530,7 +547,7 @@ fun GlyphClockHomeScreen() {
                 Spacer(modifier = Modifier.height(12.dp))
 
                 // Render 25x25 matrix bitmap preview
-                val previewBitmap = remember(currentTime, batteryLevel, temperatureCelsius, weatherCelsius, unreadCount, use24Hour, clockStyle, statusWidget) {
+                val previewBitmap = remember(currentTime, batteryLevel, temperatureCelsius, weatherCelsius, unreadCount, use24Hour, clockStyle, statusWidget, activeWidgets) {
                     val data = StatusData(
                         batteryLevel = batteryLevel,
                         temperatureCelsius = temperatureCelsius,
@@ -542,13 +559,15 @@ fun GlyphClockHomeScreen() {
                             time = currentTime,
                             use24Hour = use24Hour,
                             widget = statusWidget,
-                            data = data
+                            data = data,
+                            widgets = activeWidgets
                         )
                         ClockStyle.ANALOG -> MatrixCanvasRenderer.renderAnalogFrame(
                             time = currentTime,
                             use24Hour = use24Hour,
                             widget = statusWidget,
-                            data = data
+                            data = data,
+                            widgets = activeWidgets
                         )
                     }
                 }
@@ -588,12 +607,21 @@ fun GlyphClockHomeScreen() {
                     }
                     OutlinedButton(
                         onClick = {
-                            statusWidget = StatusWidgetModule.nextWidget(statusWidget, unreadCount)
+                            statusWidget = StatusWidgetModule.nextWidget(statusWidget, unreadCount, activeWidgets)
                             ClockPreferences.setStatusWidget(context, statusWidget)
                         }
                     ) {
                         Text("Widget: ${statusWidget.name}")
                     }
+                }
+
+                Spacer(modifier = Modifier.height(8.dp))
+
+                TextButton(
+                    onClick = { context.startActivity(Intent(context, EditWidgetsActivity::class.java)) },
+                    modifier = Modifier.fillMaxWidth()
+                ) {
+                    Text("Edit Widgets")
                 }
             }
         }

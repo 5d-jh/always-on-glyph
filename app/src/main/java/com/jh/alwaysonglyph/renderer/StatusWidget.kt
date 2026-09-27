@@ -4,9 +4,9 @@ package com.jh.alwaysonglyph.renderer
  * The mini status widget shown at the bottom of the matrix (digital & analog).
  *
  * The widget can be cycled by long-pressing the Glyph button. The available
- * options depend on whether there are unread notifications:
- *  - no notifications: BATTERY <-> TEMPERATURE <-> WEATHER
- *  - with notifications: NOTIFICATION -> BATTERY -> TEMPERATURE -> WEATHER
+ * options and their order are user-configurable (see EditWidgetsActivity).
+ * [StatusWidget.NOTIFICATION] is only shown while there are unread
+ * notifications, regardless of its position in the configured order.
  */
 enum class StatusWidget { NOTIFICATION, BATTERY, TEMPERATURE, WEATHER }
 
@@ -26,6 +26,17 @@ data class StatusData(
  */
 object StatusWidgetModule {
 
+    /**
+     * Default rotation order. Matches the pre-customisation behaviour:
+     * NOTIFICATION first (only while unread), then BATTERY, TEMPERATURE, WEATHER.
+     */
+    val DEFAULT_ORDER: List<StatusWidget> = listOf(
+        StatusWidget.NOTIFICATION,
+        StatusWidget.BATTERY,
+        StatusWidget.TEMPERATURE,
+        StatusWidget.WEATHER,
+    )
+
     fun text(widget: StatusWidget, data: StatusData): String = when (widget) {
         StatusWidget.BATTERY -> "${data.batteryLevel}%"
         StatusWidget.TEMPERATURE -> "${data.temperatureCelsius}°"
@@ -33,24 +44,36 @@ object StatusWidgetModule {
         StatusWidget.NOTIFICATION -> "·${data.unreadNotifications}"
     }
 
-    fun availableWidgets(unreadCount: Int): List<StatusWidget> =
-        if (unreadCount > 0) {
-            listOf(StatusWidget.NOTIFICATION, StatusWidget.BATTERY, StatusWidget.TEMPERATURE, StatusWidget.WEATHER)
+    /**
+     * The widgets available in the rotation, in configured order. The
+     * notification widget is dropped while there is nothing unread, and is
+     * bumped to the front whenever there is something unread.
+     */
+    fun availableWidgets(unreadCount: Int, widgets: List<StatusWidget> = DEFAULT_ORDER): List<StatusWidget> {
+        val others = widgets.filter { it != StatusWidget.NOTIFICATION }
+        return if (unreadCount > 0 && StatusWidget.NOTIFICATION in widgets) {
+            listOf(StatusWidget.NOTIFICATION) + others
         } else {
-            listOf(StatusWidget.BATTERY, StatusWidget.TEMPERATURE, StatusWidget.WEATHER)
+            others
         }
+    }
 
-    fun nextWidget(current: StatusWidget, unreadCount: Int): StatusWidget {
-        val available = availableWidgets(unreadCount)
+    fun nextWidget(current: StatusWidget, unreadCount: Int, widgets: List<StatusWidget> = DEFAULT_ORDER): StatusWidget {
+        val available = availableWidgets(unreadCount, widgets)
+        if (available.isEmpty()) return current
         val index = available.indexOf(current)
         val nextIndex = if (index >= 0) (index + 1) % available.size else 0
         return available[nextIndex]
     }
 
     /**
-     * Falls back to [StatusWidget.BATTERY] when the notification widget is
-     * selected but there is nothing unread to display.
+     * Resolves the widget actually displayed. Falls back to the first available
+     * widget when the selected one is not in the rotation (e.g. the
+     * notification widget is selected but there is nothing unread).
      */
-    fun effectiveWidget(widget: StatusWidget, unreadCount: Int): StatusWidget =
-        if (widget == StatusWidget.NOTIFICATION && unreadCount <= 0) StatusWidget.BATTERY else widget
+    fun effectiveWidget(widget: StatusWidget, unreadCount: Int, widgets: List<StatusWidget> = DEFAULT_ORDER): StatusWidget {
+        val available = availableWidgets(unreadCount, widgets)
+        if (available.isEmpty()) return StatusWidget.BATTERY
+        return if (widget in available) widget else available.first()
+    }
 }
