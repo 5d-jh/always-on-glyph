@@ -33,9 +33,9 @@ import androidx.compose.foundation.layout.navigationBars
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.KeyboardArrowRight
-import androidx.compose.material3.BottomAppBar
 import androidx.compose.material3.Button
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
@@ -57,6 +57,7 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.TimePicker
 import androidx.compose.material3.TimePickerDialog
+import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.material3.rememberTimePickerState
 import androidx.compose.runtime.Composable
@@ -323,42 +324,39 @@ fun GlyphClockHomeScreen() {
     Scaffold(
         contentWindowInsets = WindowInsets(0.dp),
         topBar = {
-            CenterAlignedTopAppBar(
-                title = {
-                    Text(
-                        text = stringResource(R.string.home_title),
-                        style = MaterialTheme.typography.titleLarge
-                    )
-                },
-                colors = TopAppBarDefaults.centerAlignedTopAppBarColors(
-                    containerColor = MaterialTheme.colorScheme.surface
-                )
-            )
-        },
-        bottomBar = {
             if (isDirty) {
-                BottomAppBar(
-                    containerColor = MaterialTheme.colorScheme.surface,
-                ) {
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.spacedBy(12.dp),
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
-                        OutlinedButton(
-                            onClick = { cancelChanges() },
-                            modifier = Modifier.weight(1f)
-                        ) {
+                TopAppBar(
+                    title = {},
+                    navigationIcon = {
+                        TextButton(onClick = { cancelChanges() }) {
                             Text(stringResource(R.string.cancel))
                         }
+                    },
+                    actions = {
                         Button(
                             onClick = { applyChanges() },
-                            modifier = Modifier.weight(1f)
+                            shape = CircleShape,
+                            modifier = Modifier.padding(end = 8.dp)
                         ) {
                             Text(stringResource(R.string.apply))
                         }
-                    }
-                }
+                    },
+                    colors = TopAppBarDefaults.topAppBarColors(
+                        containerColor = MaterialTheme.colorScheme.surface
+                    )
+                )
+            } else {
+                CenterAlignedTopAppBar(
+                    title = {
+                        Text(
+                            text = stringResource(R.string.home_title),
+                            style = MaterialTheme.typography.titleLarge
+                        )
+                    },
+                    colors = TopAppBarDefaults.centerAlignedTopAppBarColors(
+                        containerColor = MaterialTheme.colorScheme.surface
+                    )
+                )
             }
         }
     ) { innerPadding ->
@@ -367,7 +365,7 @@ fun GlyphClockHomeScreen() {
             modifier = Modifier.fillMaxSize(),
             contentPadding = PaddingValues(
                 top = innerPadding.calculateTopPadding(),
-                bottom = innerPadding.calculateBottomPadding() + if (isDirty) 0.dp else bottomInset
+                bottom = innerPadding.calculateBottomPadding() + bottomInset
             )
         ) {
             item {
