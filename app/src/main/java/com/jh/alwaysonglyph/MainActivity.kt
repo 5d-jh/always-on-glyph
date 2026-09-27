@@ -1,12 +1,16 @@
 package com.jh.alwaysonglyph
 
+import android.Manifest
 import android.content.ComponentName
 import android.content.Intent
+import android.content.pm.PackageManager
 import android.os.Bundle
 import android.provider.Settings
 import android.widget.Toast
 import androidx.activity.ComponentActivity
+import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.compose.setContent
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
@@ -60,6 +64,7 @@ import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.core.content.ContextCompat
 import com.jh.alwaysonglyph.receiver.BatteryStateReceiver
 import com.jh.alwaysonglyph.renderer.MatrixCanvasRenderer
 import com.jh.alwaysonglyph.renderer.StatusData
@@ -68,6 +73,7 @@ import com.jh.alwaysonglyph.service.UnreadNotificationListenerService
 import com.jh.alwaysonglyph.prefs.ClockPreferences
 import com.jh.alwaysonglyph.prefs.ClockStyle
 import com.jh.alwaysonglyph.ui.theme.AlwaysOnGlyphTheme
+import com.jh.alwaysonglyph.weather.WeatherRepository
 import java.time.LocalTime
 import java.time.format.DateTimeFormatter
 
@@ -78,6 +84,7 @@ private data class SavedSettings(
     val disableStartMinutes: Int,
     val disableEndMinutes: Int,
     val clockStyle: ClockStyle,
+    val turnOffOnWake: Boolean,
 )
 
 @Composable
@@ -141,6 +148,7 @@ fun GlyphClockHomeScreen() {
     var isNotifGranted by remember { mutableStateOf(false) }
     var batteryLevel by remember { mutableStateOf(100) }
     var temperatureCelsius by remember { mutableStateOf(0) }
+    var weatherCelsius by remember { mutableStateOf(WeatherRepository.currentTemperatureCelsius()) }
     var unreadCount by remember { mutableStateOf(0) }
     var currentTime by remember { mutableStateOf(LocalTime.now()) }
     var statusWidget by remember { mutableStateOf(ClockPreferences.getStatusWidget(context)) }
@@ -154,6 +162,7 @@ fun GlyphClockHomeScreen() {
                 disableStartMinutes = ClockPreferences.getAodDisabledStartMinutes(context),
                 disableEndMinutes = ClockPreferences.getAodDisabledEndMinutes(context),
                 clockStyle = ClockPreferences.getClockStyle(context),
+                turnOffOnWake = ClockPreferences.isTurnOffOnWakeEnabled(context),
             )
         )
     }
@@ -164,6 +173,7 @@ fun GlyphClockHomeScreen() {
     var disableStartMinutes by remember { mutableStateOf(saved.disableStartMinutes) }
     var disableEndMinutes by remember { mutableStateOf(saved.disableEndMinutes) }
     var clockStyle by remember { mutableStateOf(saved.clockStyle) }
+    var turnOffOnWake by remember { mutableStateOf(saved.turnOffOnWake) }
     var showStartPicker by remember { mutableStateOf(false) }
     var showEndPicker by remember { mutableStateOf(false) }
 
@@ -176,6 +186,7 @@ fun GlyphClockHomeScreen() {
         ClockPreferences.setAodDisabledStartMinutes(context, disableStartMinutes)
         ClockPreferences.setAodDisabledEndMinutes(context, disableEndMinutes)
         ClockPreferences.setClockStyle(context, clockStyle)
+        ClockPreferences.setTurnOffOnWakeEnabled(context, turnOffOnWake)
 
         saved = SavedSettings(
             use24Hour = use24Hour,
@@ -184,6 +195,7 @@ fun GlyphClockHomeScreen() {
             disableStartMinutes = disableStartMinutes,
             disableEndMinutes = disableEndMinutes,
             clockStyle = clockStyle,
+            turnOffOnWake = turnOffOnWake,
         )
         isDirty = false
     }
@@ -195,6 +207,7 @@ fun GlyphClockHomeScreen() {
         disableStartMinutes = saved.disableStartMinutes
         disableEndMinutes = saved.disableEndMinutes
         clockStyle = saved.clockStyle
+        turnOffOnWake = saved.turnOffOnWake
         isDirty = false
     }
 
@@ -212,7 +225,35 @@ fun GlyphClockHomeScreen() {
         statusWidget = ClockPreferences.getStatusWidget(context)
     }
 
+    fun refreshWeather() {
+        WeatherRepository.refresh(context) { temperature ->
+            weatherCelsius = temperature
+        }
+    }
+
+    val permissionLauncher = rememberLauncherForActivityResult(
+        ActivityResultContracts.RequestMultiplePermissions()
+    ) {
+        refreshWeather()
+    }
+
+    fun ensureLocationPermission() {
+        val needed = listOf(
+            Manifest.permission.ACCESS_COARSE_LOCATION,
+            Manifest.permission.ACCESS_FINE_LOCATION
+        ).filter {
+            ContextCompat.checkSelfPermission(context, it) != PackageManager.PERMISSION_GRANTED
+        }
+        if (needed.isNotEmpty()) {
+            permissionLauncher.launch(needed.toTypedArray())
+        } else {
+            refreshWeather()
+        }
+    }
+
     LaunchedEffect(Unit) {
+        WeatherRepository.loadCache(context)
+        weatherCelsius = WeatherRepository.currentTemperatureCelsius()
         refreshLiveData()
     }
 
@@ -440,6 +481,36 @@ fun GlyphClockHomeScreen() {
 
         Spacer(modifier = Modifier.height(16.dp))
 
+        // Turn off on wake Card
+        Card(
+            modifier = Modifier.fillMaxWidth(),
+            shape = RoundedCornerShape(16.dp)
+        ) {
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(16.dp),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Text(
+                    text = "화면 켜지면 Glyph 끄기",
+                    style = MaterialTheme.typography.titleMedium,
+                    fontWeight = FontWeight.Bold
+                )
+
+                Switch(
+                    checked = turnOffOnWake,
+                    onCheckedChange = { checked ->
+                        turnOffOnWake = checked
+                        isDirty = true
+                    }
+                )
+            }
+        }
+
+        Spacer(modifier = Modifier.height(16.dp))
+
         // Matrix Live Preview Card
         Card(
             modifier = Modifier.fillMaxWidth(),
@@ -459,10 +530,11 @@ fun GlyphClockHomeScreen() {
                 Spacer(modifier = Modifier.height(12.dp))
 
                 // Render 25x25 matrix bitmap preview
-                val previewBitmap = remember(currentTime, batteryLevel, temperatureCelsius, unreadCount, use24Hour, clockStyle, statusWidget) {
+                val previewBitmap = remember(currentTime, batteryLevel, temperatureCelsius, weatherCelsius, unreadCount, use24Hour, clockStyle, statusWidget) {
                     val data = StatusData(
                         batteryLevel = batteryLevel,
                         temperatureCelsius = temperatureCelsius,
+                        weatherCelsius = weatherCelsius,
                         unreadNotifications = unreadCount
                     )
                     when (clockStyle) {
@@ -498,7 +570,7 @@ fun GlyphClockHomeScreen() {
                 Spacer(modifier = Modifier.height(12.dp))
 
                 Text(
-                    text = "Time: ${formatTimeLabel(currentTime)} | Battery: $batteryLevel% | Temp: ${temperatureCelsius}° | Unread: $unreadCount | Widget: ${statusWidget.name}",
+                    text = "Time: ${formatTimeLabel(currentTime)} | Battery: $batteryLevel% | Temp: ${temperatureCelsius}° | Weather: ${weatherCelsius?.let { "${it}°" } ?: "--"} | Unread: $unreadCount | Widget: ${statusWidget.name}",
                     style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
@@ -508,7 +580,10 @@ fun GlyphClockHomeScreen() {
                 Row(
                     horizontalArrangement = Arrangement.spacedBy(8.dp)
                 ) {
-                    Button(onClick = { refreshLiveData() }) {
+                    Button(onClick = {
+                        refreshLiveData()
+                        ensureLocationPermission()
+                    }) {
                         Text("Refresh Preview")
                     }
                     OutlinedButton(

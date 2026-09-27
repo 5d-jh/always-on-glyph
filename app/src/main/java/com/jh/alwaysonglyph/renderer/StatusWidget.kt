@@ -5,10 +5,10 @@ package com.jh.alwaysonglyph.renderer
  *
  * The widget can be cycled by long-pressing the Glyph button. The available
  * options depend on whether there are unread notifications:
- *  - no notifications: BATTERY <-> TEMPERATURE
- *  - with notifications: NOTIFICATION -> BATTERY -> TEMPERATURE
+ *  - no notifications: BATTERY <-> TEMPERATURE <-> WEATHER
+ *  - with notifications: NOTIFICATION -> BATTERY -> TEMPERATURE -> WEATHER
  */
-enum class StatusWidget { NOTIFICATION, BATTERY, TEMPERATURE }
+enum class StatusWidget { NOTIFICATION, BATTERY, TEMPERATURE, WEATHER }
 
 /**
  * Snapshot of the live values a [StatusWidget] may render.
@@ -16,6 +16,7 @@ enum class StatusWidget { NOTIFICATION, BATTERY, TEMPERATURE }
 data class StatusData(
     val batteryLevel: Int = 100,
     val temperatureCelsius: Int = 25,
+    val weatherCelsius: Int? = null,
     val unreadNotifications: Int = 0,
 )
 
@@ -28,14 +29,15 @@ object StatusWidgetModule {
     fun text(widget: StatusWidget, data: StatusData): String = when (widget) {
         StatusWidget.BATTERY -> "${data.batteryLevel}%"
         StatusWidget.TEMPERATURE -> "${data.temperatureCelsius}°"
+        StatusWidget.WEATHER -> data.weatherCelsius?.let { "${it}°" } ?: "--°"
         StatusWidget.NOTIFICATION -> "·${data.unreadNotifications}"
     }
 
     fun availableWidgets(unreadCount: Int): List<StatusWidget> =
         if (unreadCount > 0) {
-            listOf(StatusWidget.NOTIFICATION, StatusWidget.BATTERY, StatusWidget.TEMPERATURE)
+            listOf(StatusWidget.NOTIFICATION, StatusWidget.BATTERY, StatusWidget.TEMPERATURE, StatusWidget.WEATHER)
         } else {
-            listOf(StatusWidget.BATTERY, StatusWidget.TEMPERATURE)
+            listOf(StatusWidget.BATTERY, StatusWidget.TEMPERATURE, StatusWidget.WEATHER)
         }
 
     fun nextWidget(current: StatusWidget, unreadCount: Int): StatusWidget {

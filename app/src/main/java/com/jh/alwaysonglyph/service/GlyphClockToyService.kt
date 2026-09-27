@@ -10,15 +10,16 @@ import android.os.Bundle
 import android.os.Handler
 import android.os.IBinder
 import android.os.Looper
-import android.os.Message
 import android.os.Messenger
+import android.os.PowerManager
 import android.util.Log
+import com.jh.alwaysonglyph.prefs.ClockPreferences
+import com.jh.alwaysonglyph.prefs.ClockStyle
 import com.jh.alwaysonglyph.receiver.BatteryStateReceiver
 import com.jh.alwaysonglyph.renderer.MatrixCanvasRenderer
 import com.jh.alwaysonglyph.renderer.StatusData
 import com.jh.alwaysonglyph.renderer.StatusWidgetModule
-import com.jh.alwaysonglyph.prefs.ClockPreferences
-import com.jh.alwaysonglyph.prefs.ClockStyle
+import com.jh.alwaysonglyph.weather.WeatherRepository
 import com.nothing.ketchum.Glyph
 import com.nothing.ketchum.GlyphMatrixFrame
 import com.nothing.ketchum.GlyphMatrixManager
@@ -47,20 +48,39 @@ class GlyphClockToyService : Service() {
 
     private val serviceMessenger = Messenger(serviceHandler)
 
+    private val weatherHandler = Handler(Looper.getMainLooper())
+    private val weatherRefreshRunnable = object : Runnable {
+        override fun run() {
+            if (WeatherRepository.isStale()) {
+                WeatherRepository.refresh(applicationContext) {
+                    weatherHandler.post { refreshAod() }
+                }
+            }
+            weatherHandler.postDelayed(this, WEATHER_REFRESH_INTERVAL_MS)
+        }
+    }
+
     private val screenStateReceiver = object : BroadcastReceiver() {
         override fun onReceive(context: Context?, intent: Intent?) {
             when (intent?.action) {
-                Intent.ACTION_SCREEN_ON, Intent.ACTION_USER_PRESENT -> turnOffMatrix()
+                Intent.ACTION_SCREEN_OFF -> refreshAod()
+                Intent.ACTION_SCREEN_ON, Intent.ACTION_USER_PRESENT -> {
+                    if (ClockPreferences.isTurnOffOnWakeEnabled(applicationContext)) {
+                        turnOffMatrix()
+                    }
+                }
             }
         }
     }
 
     override fun onCreate() {
         super.onCreate()
+        WeatherRepository.loadCache(applicationContext)
         registerScreenStateReceiver()
     }
 
     override fun onDestroy() {
+        weatherHandler.removeCallbacks(weatherRefreshRunnable)
         unregisterScreenStateReceiver()
         super.onDestroy()
     }
@@ -86,6 +106,7 @@ class GlyphClockToyService : Service() {
 
     private fun registerScreenStateReceiver() {
         val filter = IntentFilter().apply {
+            addAction(Intent.ACTION_SCREEN_OFF)
             addAction(Intent.ACTION_SCREEN_ON)
             addAction(Intent.ACTION_USER_PRESENT)
         }
@@ -112,7 +133,13 @@ class GlyphClockToyService : Service() {
         }
     }
 
+    private fun isScreenInteractive(): Boolean {
+        val powerManager = getSystemService(Context.POWER_SERVICE) as? PowerManager
+        return powerManager?.isInteractive ?: true
+    }
+
     private fun refreshAod() {
+        if (isScreenInteractive()) return
         if (isAodDisabledNow()) {
             turnOffMatrix()
         } else {
@@ -145,6 +172,7 @@ class GlyphClockToyService : Service() {
                 try {
                     manager.register(targetDevice)
                     refreshAod()
+                    scheduleWeatherRefresh()
                 } catch (e: Exception) {
                     Log.e(TAG, "Failed to register target device $targetDevice", e)
                 }
@@ -165,6 +193,16 @@ class GlyphClockToyService : Service() {
         updateMatrixDisplay()
     }
 
+    private fun scheduleWeatherRefresh() {
+        weatherHandler.removeCallbacks(weatherRefreshRunnable)
+        if (WeatherRepository.isStale()) {
+            WeatherRepository.refresh(applicationContext) {
+                weatherHandler.post { refreshAod() }
+            }
+        }
+        weatherHandler.postDelayed(weatherRefreshRunnable, WEATHER_REFRESH_INTERVAL_MS)
+    }
+
     fun updateMatrixDisplay() {
         val manager = glyphMatrixManager ?: return
         if (!isConnected) return
@@ -174,6 +212,7 @@ class GlyphClockToyService : Service() {
             val batteryLevel = BatteryStateReceiver.getBatteryPercentage(applicationContext)
             val temperature = BatteryStateReceiver.getTemperatureCelsius(applicationContext)
             val unreadCount = UnreadNotificationListenerService.getUnreadCount()
+            val weatherCelsius = WeatherRepository.currentTemperatureCelsius()
 
             val use24Hour = ClockPreferences.use24HourFormat(applicationContext)
             val style = ClockPreferences.getClockStyle(applicationContext)
@@ -181,6 +220,7 @@ class GlyphClockToyService : Service() {
             val data = StatusData(
                 batteryLevel = batteryLevel,
                 temperatureCelsius = temperature,
+                weatherCelsius = weatherCelsius,
                 unreadNotifications = unreadCount
             )
             val bitmap = when (style) {
@@ -209,7 +249,7 @@ class GlyphClockToyService : Service() {
                 .build(applicationContext)
 
             manager.setMatrixFrame(frame)
-            Log.d(TAG, "Updated matrix display successfully: time=$time, batt=$batteryLevel%, temp=${temperature}C, unread=$unreadCount")
+            Log.d(TAG, "Updated matrix display successfully: time=$time, batt=$batteryLevel%, temp=${temperature}C, weather=${weatherCelsius}C, unread=$unreadCount")
         } catch (e: Exception) {
             Log.e(TAG, "Failed to update matrix display", e)
         }
@@ -217,5 +257,6 @@ class GlyphClockToyService : Service() {
 
     companion object {
         private const val TAG = "GlyphClockToyService"
+        private const val WEATHER_REFRESH_INTERVAL_MS = 30 * 60 * 1000L
     }
 }

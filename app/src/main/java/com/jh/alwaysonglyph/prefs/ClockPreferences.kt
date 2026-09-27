@@ -15,6 +15,7 @@ object ClockPreferences {
     private const val KEY_DISABLE_END_MINUTES = "disable_end_minutes"
     private const val KEY_CLOCK_STYLE = "clock_style"
     private const val KEY_STATUS_WIDGET = "status_widget"
+    private const val KEY_TURN_OFF_ON_WAKE = "turn_off_on_wake"
 
     private const val DEFAULT_BRIGHTNESS = 200
     private const val DEFAULT_DISABLE_START_MINUTES = 22 * 60
@@ -54,6 +55,13 @@ object ClockPreferences {
 
     fun setStatusWidget(context: Context, widget: StatusWidget) {
         prefs(context).edit().putString(KEY_STATUS_WIDGET, widget.name).apply()
+    }
+
+    fun isTurnOffOnWakeEnabled(context: Context): Boolean =
+        prefs(context).getBoolean(KEY_TURN_OFF_ON_WAKE, true)
+
+    fun setTurnOffOnWakeEnabled(context: Context, enabled: Boolean) {
+        prefs(context).edit().putBoolean(KEY_TURN_OFF_ON_WAKE, enabled).apply()
     }
 
     fun getBrightness(context: Context): Int =

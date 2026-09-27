@@ -91,16 +91,18 @@ class MatrixCanvasRendererTest {
 
     @Test
     fun testStatusWidgetText() {
-        val data = StatusData(batteryLevel = 79, temperatureCelsius = 27, unreadNotifications = 3)
+        val data = StatusData(batteryLevel = 79, temperatureCelsius = 27, weatherCelsius = 21, unreadNotifications = 3)
         assertEquals("79%", StatusWidgetModule.text(StatusWidget.BATTERY, data))
         assertEquals("27°", StatusWidgetModule.text(StatusWidget.TEMPERATURE, data))
+        assertEquals("21°", StatusWidgetModule.text(StatusWidget.WEATHER, data))
+        assertEquals("--°", StatusWidgetModule.text(StatusWidget.WEATHER, data.copy(weatherCelsius = null)))
         assertEquals("·3", StatusWidgetModule.text(StatusWidget.NOTIFICATION, data))
     }
 
     @Test
     fun testAvailableWidgetsWithoutNotification() {
         assertEquals(
-            listOf(StatusWidget.BATTERY, StatusWidget.TEMPERATURE),
+            listOf(StatusWidget.BATTERY, StatusWidget.TEMPERATURE, StatusWidget.WEATHER),
             StatusWidgetModule.availableWidgets(0)
         )
     }
@@ -108,7 +110,7 @@ class MatrixCanvasRendererTest {
     @Test
     fun testAvailableWidgetsWithNotification() {
         assertEquals(
-            listOf(StatusWidget.NOTIFICATION, StatusWidget.BATTERY, StatusWidget.TEMPERATURE),
+            listOf(StatusWidget.NOTIFICATION, StatusWidget.BATTERY, StatusWidget.TEMPERATURE, StatusWidget.WEATHER),
             StatusWidgetModule.availableWidgets(3)
         )
     }
@@ -116,14 +118,16 @@ class MatrixCanvasRendererTest {
     @Test
     fun testNextWidgetCyclesWithoutNotification() {
         assertEquals(StatusWidget.TEMPERATURE, StatusWidgetModule.nextWidget(StatusWidget.BATTERY, 0))
-        assertEquals(StatusWidget.BATTERY, StatusWidgetModule.nextWidget(StatusWidget.TEMPERATURE, 0))
+        assertEquals(StatusWidget.WEATHER, StatusWidgetModule.nextWidget(StatusWidget.TEMPERATURE, 0))
+        assertEquals(StatusWidget.BATTERY, StatusWidgetModule.nextWidget(StatusWidget.WEATHER, 0))
     }
 
     @Test
     fun testNextWidgetCyclesWithNotification() {
         assertEquals(StatusWidget.BATTERY, StatusWidgetModule.nextWidget(StatusWidget.NOTIFICATION, 5))
         assertEquals(StatusWidget.TEMPERATURE, StatusWidgetModule.nextWidget(StatusWidget.BATTERY, 5))
-        assertEquals(StatusWidget.NOTIFICATION, StatusWidgetModule.nextWidget(StatusWidget.TEMPERATURE, 5))
+        assertEquals(StatusWidget.WEATHER, StatusWidgetModule.nextWidget(StatusWidget.TEMPERATURE, 5))
+        assertEquals(StatusWidget.NOTIFICATION, StatusWidgetModule.nextWidget(StatusWidget.WEATHER, 5))
     }
 
     @Test
@@ -131,5 +135,6 @@ class MatrixCanvasRendererTest {
         assertEquals(StatusWidget.BATTERY, StatusWidgetModule.effectiveWidget(StatusWidget.NOTIFICATION, 0))
         assertEquals(StatusWidget.NOTIFICATION, StatusWidgetModule.effectiveWidget(StatusWidget.NOTIFICATION, 1))
         assertEquals(StatusWidget.TEMPERATURE, StatusWidgetModule.effectiveWidget(StatusWidget.TEMPERATURE, 0))
+        assertEquals(StatusWidget.WEATHER, StatusWidgetModule.effectiveWidget(StatusWidget.WEATHER, 0))
     }
 }
