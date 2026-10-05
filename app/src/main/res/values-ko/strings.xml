@@ -44,6 +44,8 @@
 
     <!-- Edit widgets screen -->
     <string name="edit_widgets_hint">표시할 위젯을 선택하세요. 알림이 있으면 알림 위젯이 가장 먼저 표시됩니다.</string>
+    <string name="priority_behavior_label">상황별 자동 우선순위</string>
+    <string name="priority_behavior_desc">읽지 않은 알림이 있으면 알림, 충전 중이면 배터리, 평소에는 날씨 위젯을 자동으로 표시합니다.</string>
     <string name="back">뒤로</string>
     <string name="weather_tooltip">대략적인 위치만 허용해도 됩니다. 위치 좌표는 기상 정보 제공을 위해 Open-Meteo(api.open-meteo.com)로 전송됩니다.</string>
     <string name="weather_tooltip_desc">위치 데이터 사용 안내</string>

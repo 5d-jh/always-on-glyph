@@ -18,6 +18,7 @@ object ClockPreferences {
     private const val KEY_STATUS_WIDGET = "status_widget"
     private const val KEY_TURN_OFF_ON_WAKE = "turn_off_on_wake"
     private const val KEY_ENABLED_WIDGETS = "enabled_widgets"
+    private const val KEY_PRIORITY_ENABLED = "priority_enabled"
 
     private const val DEFAULT_BRIGHTNESS = 200
     private const val DEFAULT_DISABLE_START_MINUTES = 22 * 60
@@ -71,6 +72,19 @@ object ClockPreferences {
 
     fun setEnabledWidgets(context: Context, enabled: Set<StatusWidget>) {
         prefs(context).edit().putString(KEY_ENABLED_WIDGETS, enabled.joinToString(",") { it.name }).apply()
+    }
+
+    /**
+     * Whether the situation-driven priority widgets are enabled. When true, the
+     * Glyph automatically shows the notification widget while unread
+     * notifications exist, the battery widget while charging, and weather
+     * otherwise. When false, the manually selected widget is shown instead.
+     */
+    fun isPriorityEnabled(context: Context): Boolean =
+        prefs(context).getBoolean(KEY_PRIORITY_ENABLED, true)
+
+    fun setPriorityEnabled(context: Context, enabled: Boolean) {
+        prefs(context).edit().putBoolean(KEY_PRIORITY_ENABLED, enabled).apply()
     }
 
     /**

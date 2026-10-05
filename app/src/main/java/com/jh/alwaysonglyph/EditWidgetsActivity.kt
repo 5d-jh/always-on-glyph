@@ -144,6 +144,7 @@ fun EditWidgetsScreen() {
     val activity = context as? Activity
 
     var enabled by remember { mutableStateOf(ClockPreferences.getEnabledWidgets(context)) }
+    var priorityEnabled by remember { mutableStateOf(ClockPreferences.isPriorityEnabled(context)) }
     var notificationGranted by remember {
         mutableStateOf(NotificationAccess.isAccessGranted(context))
     }
@@ -210,6 +211,42 @@ fun EditWidgetsScreen() {
                 contentPadding = PaddingValues(16.dp),
                 verticalArrangement = Arrangement.spacedBy(8.dp)
             ) {
+                item {
+                    Card(
+                        modifier = Modifier.fillMaxWidth(),
+                        colors = CardDefaults.cardColors(
+                            containerColor = MaterialTheme.colorScheme.surfaceVariant
+                        )
+                    ) {
+                        Row(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(horizontal = 16.dp, vertical = 12.dp),
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Column(modifier = Modifier.weight(1f)) {
+                                Text(
+                                    text = stringResource(R.string.priority_behavior_label),
+                                    style = MaterialTheme.typography.titleMedium,
+                                    fontWeight = FontWeight.Bold
+                                )
+                                Text(
+                                    text = stringResource(R.string.priority_behavior_desc),
+                                    style = MaterialTheme.typography.bodySmall,
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                                )
+                            }
+                            Switch(
+                                checked = priorityEnabled,
+                                onCheckedChange = { checked ->
+                                    priorityEnabled = checked
+                                    ClockPreferences.setPriorityEnabled(context, checked)
+                                }
+                            )
+                        }
+                    }
+                }
+
                 items(
                     StatusWidgetModule.DEFAULT_ORDER.filter {
                         BuildConfig.HAS_NOTIFICATION || it != StatusWidget.NOTIFICATION

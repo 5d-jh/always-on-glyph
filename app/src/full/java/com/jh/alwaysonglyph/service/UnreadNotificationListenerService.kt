@@ -5,6 +5,8 @@ import android.content.Context
 import android.provider.Settings
 import android.service.notification.NotificationListenerService
 import android.service.notification.StatusBarNotification
+import com.jh.alwaysonglyph.renderer.StatusWidget
+import com.jh.alwaysonglyph.renderer.WidgetPriority
 import java.util.concurrent.atomic.AtomicInteger
 
 class UnreadNotificationListenerService : NotificationListenerService() {
@@ -12,16 +14,31 @@ class UnreadNotificationListenerService : NotificationListenerService() {
     override fun onListenerConnected() {
         super.onListenerConnected()
         updateUnreadCount()
+        syncNotificationPriority()
     }
 
     override fun onNotificationPosted(sbn: StatusBarNotification?) {
         super.onNotificationPosted(sbn)
         updateUnreadCount()
+        if (getUnreadCount() > 0) {
+            WidgetPriority.push(StatusWidget.NOTIFICATION)
+        }
     }
 
     override fun onNotificationRemoved(sbn: StatusBarNotification?) {
         super.onNotificationRemoved(sbn)
         updateUnreadCount()
+        if (getUnreadCount() == 0) {
+            WidgetPriority.remove(StatusWidget.NOTIFICATION)
+        }
+    }
+
+    private fun syncNotificationPriority() {
+        if (getUnreadCount() > 0) {
+            WidgetPriority.push(StatusWidget.NOTIFICATION)
+        } else {
+            WidgetPriority.remove(StatusWidget.NOTIFICATION)
+        }
     }
 
     private fun updateUnreadCount() {

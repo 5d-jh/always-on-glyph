@@ -18,7 +18,9 @@ import com.jh.alwaysonglyph.prefs.ClockStyle
 import com.jh.alwaysonglyph.receiver.BatteryStateReceiver
 import com.jh.alwaysonglyph.renderer.MatrixCanvasRenderer
 import com.jh.alwaysonglyph.renderer.StatusData
+import com.jh.alwaysonglyph.renderer.StatusWidget
 import com.jh.alwaysonglyph.renderer.StatusWidgetModule
+import com.jh.alwaysonglyph.renderer.WidgetPriority
 import com.jh.alwaysonglyph.weather.WeatherRepository
 import com.nothing.ketchum.Glyph
 import com.nothing.ketchum.GlyphMatrixFrame
@@ -39,8 +41,20 @@ class GlyphClockToyService : Service() {
             Log.d(TAG, "GlyphToy Event received: $event")
 
             when (event) {
-                GlyphToy.EVENT_AOD -> refreshAod()
-                GlyphToy.EVENT_CHANGE -> rotateStatusWidget()
+                GlyphToy.EVENT_AOD -> {
+                    if (ClockPreferences.isPriorityEnabled(applicationContext)) {
+                        WidgetPriority.advance()
+                    }
+                    refreshAod()
+                }
+                GlyphToy.EVENT_CHANGE -> {
+                    if (ClockPreferences.isPriorityEnabled(applicationContext)) {
+                        WidgetPriority.advance()
+                        refreshAod()
+                    } else {
+                        rotateStatusWidget()
+                    }
+                }
             }
         }
         true
@@ -73,15 +87,24 @@ class GlyphClockToyService : Service() {
         }
     }
 
+    private val powerStateReceiver = object : BroadcastReceiver() {
+        override fun onReceive(context: Context?, intent: Intent?) {
+            syncChargingPriority()
+            refreshAod()
+        }
+    }
+
     override fun onCreate() {
         super.onCreate()
         WeatherRepository.loadCache(applicationContext)
         registerScreenStateReceiver()
+        registerPowerStateReceiver()
     }
 
     override fun onDestroy() {
         weatherHandler.removeCallbacks(weatherRefreshRunnable)
         unregisterScreenStateReceiver()
+        unregisterPowerStateReceiver()
         super.onDestroy()
     }
 
@@ -119,6 +142,31 @@ class GlyphClockToyService : Service() {
             unregisterReceiver(screenStateReceiver)
         } catch (e: Exception) {
             Log.e(TAG, "Error unregistering screen state receiver", e)
+        }
+    }
+
+    private fun registerPowerStateReceiver() {
+        val filter = IntentFilter().apply {
+            addAction(Intent.ACTION_POWER_CONNECTED)
+            addAction(Intent.ACTION_POWER_DISCONNECTED)
+        }
+        registerReceiver(powerStateReceiver, filter, Context.RECEIVER_NOT_EXPORTED)
+        Log.d(TAG, "Power state receiver registered")
+    }
+
+    private fun unregisterPowerStateReceiver() {
+        try {
+            unregisterReceiver(powerStateReceiver)
+        } catch (e: Exception) {
+            Log.e(TAG, "Error unregistering power state receiver", e)
+        }
+    }
+
+    private fun syncChargingPriority() {
+        if (BatteryStateReceiver.isCharging(applicationContext)) {
+            WidgetPriority.push(StatusWidget.BATTERY)
+        } else {
+            WidgetPriority.remove(StatusWidget.BATTERY)
         }
     }
 
@@ -171,6 +219,7 @@ class GlyphClockToyService : Service() {
 
                 try {
                     manager.register(targetDevice)
+                    syncChargingPriority()
                     refreshAod()
                     scheduleWeatherRefresh()
                 } catch (e: Exception) {
@@ -217,8 +266,17 @@ class GlyphClockToyService : Service() {
 
             val use24Hour = ClockPreferences.use24HourFormat(applicationContext)
             val style = ClockPreferences.getClockStyle(applicationContext)
-            val widget = ClockPreferences.getStatusWidget(applicationContext)
-            val widgets = ClockPreferences.getActiveWidgets(applicationContext)
+            val priorityEnabled = ClockPreferences.isPriorityEnabled(applicationContext)
+            val widget = if (priorityEnabled) {
+                WidgetPriority.current
+            } else {
+                ClockPreferences.getStatusWidget(applicationContext)
+            }
+            val widgets = if (priorityEnabled) {
+                StatusWidgetModule.DEFAULT_ORDER
+            } else {
+                ClockPreferences.getActiveWidgets(applicationContext)
+            }
             val data = StatusData(
                 batteryLevel = batteryLevel,
                 temperatureCelsius = temperature,
