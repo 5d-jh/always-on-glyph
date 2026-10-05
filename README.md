@@ -46,7 +46,6 @@ app/src/main/
 ├── libs/
 │   └── glyph-matrix-sdk-2.0.aar              # Nothing Glyph Matrix Developer Kit v2.0
 └── res/
-    ├── drawable/img_toy_preview.xml          # Nothing OS Toy 매니저 프리뷰 아이콘
     └── values/strings.xml                    # Toy 이름 및 설명 리소스
 ```
 

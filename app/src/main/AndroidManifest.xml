@@ -69,7 +69,7 @@
                 android:resource="@string/toy_name" />
             <meta-data
                 android:name="com.nothing.glyph.toy.image"
-                android:resource="@drawable/img_toy_preview" />
+                android:resource="@drawable/ic_launcher_foreground" />
             <meta-data
                 android:name="com.nothing.glyph.toy.summary"
                 android:resource="@string/toy_summary" />
