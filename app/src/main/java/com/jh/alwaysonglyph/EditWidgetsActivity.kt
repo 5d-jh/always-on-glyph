@@ -15,6 +15,7 @@ import androidx.activity.enableEdgeToEdge
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
@@ -23,12 +24,13 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
-import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Info
+import androidx.compose.material3.Badge
 import androidx.compose.material3.Button
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
@@ -57,10 +59,11 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
-import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.semantics.Role
+import androidx.compose.ui.semantics.role
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.unit.dp
 import androidx.core.content.ContextCompat
 import androidx.lifecycle.Lifecycle
@@ -103,6 +106,19 @@ class EditWidgetsActivity : ComponentActivity() {
 }
 
 @Composable
+private fun SectionHeader(title: String) {
+    Text(
+        text = title,
+        style = MaterialTheme.typography.titleSmall,
+        color = MaterialTheme.colorScheme.primary,
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(horizontal = 16.dp)
+            .padding(top = 24.dp, bottom = 8.dp)
+    )
+}
+
+@Composable
 private fun PermissionAlertCard(
     title: String,
     message: String,
@@ -114,7 +130,7 @@ private fun PermissionAlertCard(
             .fillMaxWidth()
             .padding(horizontal = 12.dp)
             .padding(bottom = 12.dp),
-        shape = RoundedCornerShape(12.dp),
+        shape = MaterialTheme.shapes.medium,
         colors = CardDefaults.cardColors(
             containerColor = MaterialTheme.colorScheme.errorContainer
         )
@@ -123,7 +139,6 @@ private fun PermissionAlertCard(
             Text(
                 text = title,
                 style = MaterialTheme.typography.titleSmall,
-                fontWeight = FontWeight.Bold,
                 color = MaterialTheme.colorScheme.onErrorContainer
             )
             Spacer(modifier = Modifier.height(4.dp))
@@ -152,7 +167,6 @@ private fun NotificationSubSettings(
         Text(
             text = stringResource(R.string.notification_subsettings_title),
             style = MaterialTheme.typography.titleSmall,
-            fontWeight = FontWeight.Bold,
             color = MaterialTheme.colorScheme.primary
         )
         Spacer(modifier = Modifier.height(8.dp))
@@ -168,12 +182,25 @@ private fun NotificationSubSettings(
                             Intent(context, NotificationAppsActivity::class.java)
                         )
                     }
+                    .semantics { role = Role.Button }
             ) {
-                Text(
-                    text = stringResource(R.string.notification_filter_label),
-                    style = MaterialTheme.typography.titleMedium,
-                    fontWeight = FontWeight.Bold
-                )
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
+                    Text(
+                        text = stringResource(R.string.notification_filter_label),
+                        style = MaterialTheme.typography.titleMedium
+                    )
+                    if (filterEnabled) {
+                        Badge(
+                            containerColor = MaterialTheme.colorScheme.primaryContainer,
+                            contentColor = MaterialTheme.colorScheme.onPrimaryContainer
+                        ) {
+                            Text(selectedApps.size.toString())
+                        }
+                    }
+                }
                 Text(
                     text = stringResource(R.string.notification_filter_desc),
                     style = MaterialTheme.typography.bodySmall,
@@ -244,8 +271,7 @@ fun EditWidgetsScreen() {
                 title = {
                     Text(
                         text = stringResource(R.string.edit_widgets),
-                        style = MaterialTheme.typography.titleMedium,
-                        fontWeight = FontWeight.Bold
+                        style = MaterialTheme.typography.titleMedium
                     )
                 },
                 navigationIcon = {
@@ -262,57 +288,57 @@ fun EditWidgetsScreen() {
             )
         }
     ) { innerPadding ->
-        Column(
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(innerPadding)
+        Box(
+            modifier = Modifier.fillMaxSize(),
+            contentAlignment = Alignment.TopCenter
         ) {
-            Text(
-                text = stringResource(R.string.edit_widgets_hint),
-                style = MaterialTheme.typography.bodySmall,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-                modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp)
-            )
-
+            Column(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .widthIn(max = 840.dp)
+                    .padding(innerPadding)
+            ) {
             LazyColumn(
                 modifier = Modifier.fillMaxSize(),
                 contentPadding = PaddingValues(16.dp),
                 verticalArrangement = Arrangement.spacedBy(8.dp)
             ) {
                 item {
-                    Card(
-                        modifier = Modifier.fillMaxWidth(),
-                        colors = CardDefaults.cardColors(
-                            containerColor = MaterialTheme.colorScheme.surfaceVariant
-                        )
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(horizontal = 16.dp, vertical = 12.dp),
+                        verticalAlignment = Alignment.CenterVertically
                     ) {
-                        Row(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .padding(horizontal = 16.dp, vertical = 12.dp),
-                            verticalAlignment = Alignment.CenterVertically
-                        ) {
-                            Column(modifier = Modifier.weight(1f)) {
-                                Text(
-                                    text = stringResource(R.string.priority_behavior_label),
-                                    style = MaterialTheme.typography.titleMedium,
-                                    fontWeight = FontWeight.Bold
-                                )
-                                Text(
-                                    text = stringResource(R.string.priority_behavior_desc),
-                                    style = MaterialTheme.typography.bodySmall,
-                                    color = MaterialTheme.colorScheme.onSurfaceVariant
-                                )
-                            }
-                            Switch(
-                                checked = priorityEnabled,
-                                onCheckedChange = { checked ->
-                                    priorityEnabled = checked
-                                    ClockPreferences.setPriorityEnabled(context, checked)
-                                }
+                        Column(modifier = Modifier.weight(1f)) {
+                            Text(
+                                text = stringResource(R.string.priority_behavior_label),
+                                style = MaterialTheme.typography.titleMedium
+                            )
+                            Text(
+                                text = stringResource(R.string.priority_behavior_desc),
+                                style = MaterialTheme.typography.bodySmall,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant
                             )
                         }
+                        Switch(
+                            checked = priorityEnabled,
+                            onCheckedChange = { checked ->
+                                priorityEnabled = checked
+                                ClockPreferences.setPriorityEnabled(context, checked)
+                            }
+                        )
                     }
+                }
+
+                item {
+                    SectionHeader(stringResource(R.string.section_widgets))
+                    Text(
+                        text = stringResource(R.string.edit_widgets_hint),
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp)
+                    )
                 }
 
                 items(
@@ -344,8 +370,7 @@ fun EditWidgetsScreen() {
                                     Text(
                                         text = widget.displayName(context),
                                         style = MaterialTheme.typography.titleMedium,
-                                        fontWeight = FontWeight.Bold,
-                                        color = if (included) MaterialTheme.colorScheme.onSurface else Color.Gray
+                                        color = if (included) MaterialTheme.colorScheme.onSurface else MaterialTheme.colorScheme.onSurfaceVariant
                                     )
                                     Text(
                                         text = widget.description(context),
@@ -432,10 +457,11 @@ fun EditWidgetsScreen() {
                                     },
                                     selectedApps = selectedNotificationApps
                                 )
-                            }
-                        }
-                    }
-                }
+            }
+        }
+        }
+    }
+}
             }
         }
     }

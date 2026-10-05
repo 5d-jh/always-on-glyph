@@ -32,8 +32,8 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.navigationBars
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.KeyboardArrowRight
 import androidx.compose.material3.Button
@@ -93,6 +93,8 @@ import com.jh.alwaysonglyph.weather.WeatherRepository
 import java.time.LocalTime
 import java.time.format.DateTimeFormatter
 
+private val MatrixPreviewBackground = Color.Black
+
 private data class SavedSettings(
     val use24Hour: Boolean,
     val brightness: Int,
@@ -123,7 +125,7 @@ private fun SettingsCard(
 ) {
     Card(
         modifier = modifier.fillMaxWidth(),
-        shape = MaterialTheme.shapes.large,
+        shape = MaterialTheme.shapes.medium,
         colors = CardDefaults.cardColors(
             containerColor = MaterialTheme.colorScheme.surfaceContainerLow
         ),
@@ -335,7 +337,6 @@ fun GlyphClockHomeScreen() {
                     actions = {
                         Button(
                             onClick = { applyChanges() },
-                            shape = CircleShape,
                             modifier = Modifier.padding(end = 8.dp)
                         ) {
                             Text(stringResource(R.string.apply))
@@ -361,13 +362,19 @@ fun GlyphClockHomeScreen() {
         }
     ) { innerPadding ->
         val bottomInset = WindowInsets.navigationBars.asPaddingValues().calculateBottomPadding()
-        LazyColumn(
+        Box(
             modifier = Modifier.fillMaxSize(),
-            contentPadding = PaddingValues(
-                top = innerPadding.calculateTopPadding(),
-                bottom = innerPadding.calculateBottomPadding() + bottomInset
-            )
+            contentAlignment = Alignment.TopCenter
         ) {
+            LazyColumn(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .widthIn(max = 840.dp),
+                contentPadding = PaddingValues(
+                    top = innerPadding.calculateTopPadding(),
+                    bottom = innerPadding.calculateBottomPadding() + bottomInset
+                )
+            ) {
             item {
                 Text(
                     text = stringResource(R.string.home_subtitle),
@@ -604,7 +611,7 @@ fun GlyphClockHomeScreen() {
                         Box(
                             modifier = Modifier
                                 .size(200.dp)
-                                .background(Color.Black, MaterialTheme.shapes.medium),
+                                .background(MatrixPreviewBackground, MaterialTheme.shapes.medium),
                             contentAlignment = Alignment.Center
                         ) {
                             Image(
@@ -676,6 +683,7 @@ fun GlyphClockHomeScreen() {
                     )
                 }
             }
+        }
         }
     }
 

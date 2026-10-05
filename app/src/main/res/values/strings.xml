@@ -46,6 +46,7 @@
     <string name="edit_widgets_hint">Select the widgets to show. When there are notifications, the notification widget is shown first.</string>
     <string name="priority_behavior_label">Automatic priority widgets</string>
     <string name="priority_behavior_desc">Automatically show notifications while unread, battery while charging, and weather otherwise.</string>
+    <string name="section_widgets">Widgets</string>
     <string name="back">Back</string>
     <string name="weather_tooltip">Approximate location is sufficient. Location coordinates are sent to Open-Meteo (api.open-meteo.com) to provide weather information.</string>
     <string name="weather_tooltip_desc">Location data usage info</string>

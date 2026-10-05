@@ -7,16 +7,18 @@ import androidx.activity.ComponentActivity
 import androidx.activity.SystemBarStyle
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.selection.toggleable
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Search
@@ -39,7 +41,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
-import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.unit.dp
 import com.jh.alwaysonglyph.prefs.ClockPreferences
 import com.jh.alwaysonglyph.ui.theme.AlwaysOnGlyphTheme
@@ -88,8 +90,7 @@ fun NotificationAppsScreen() {
                 title = {
                     Text(
                         text = stringResource(R.string.notification_apps_title),
-                        style = MaterialTheme.typography.titleMedium,
-                        fontWeight = FontWeight.Bold
+                        style = MaterialTheme.typography.titleLarge
                     )
                 },
                 navigationIcon = {
@@ -106,11 +107,16 @@ fun NotificationAppsScreen() {
             )
         }
     ) { innerPadding ->
-        Column(
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(innerPadding)
+        Box(
+            modifier = Modifier.fillMaxSize(),
+            contentAlignment = Alignment.TopCenter
         ) {
+            Column(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .widthIn(max = 840.dp)
+                    .padding(innerPadding)
+            ) {
             OutlinedTextField(
                 value = query,
                 onValueChange = { query = it },
@@ -132,37 +138,34 @@ fun NotificationAppsScreen() {
                     Row(
                         modifier = Modifier
                             .fillMaxWidth()
-                            .clickable {
-                                val newSet = if (checked) {
-                                    selectedApps - app.packageName
-                                } else {
-                                    selectedApps + app.packageName
+                            .toggleable(
+                                value = checked,
+                                role = Role.Checkbox,
+                                onValueChange = { isChecked ->
+                                    val newSet = if (isChecked) {
+                                        selectedApps + app.packageName
+                                    } else {
+                                        selectedApps - app.packageName
+                                    }
+                                    selectedApps = newSet
+                                    ClockPreferences.setSelectedNotificationApps(context, newSet)
                                 }
-                                selectedApps = newSet
-                                ClockPreferences.setSelectedNotificationApps(context, newSet)
-                            }
+                            )
                             .padding(vertical = 4.dp),
                         verticalAlignment = Alignment.CenterVertically
                     ) {
                         Checkbox(
                             checked = checked,
-                            onCheckedChange = { isChecked ->
-                                val newSet = if (isChecked) {
-                                    selectedApps + app.packageName
-                                } else {
-                                    selectedApps - app.packageName
-                                }
-                                selectedApps = newSet
-                                ClockPreferences.setSelectedNotificationApps(context, newSet)
-                            }
+                            onCheckedChange = null
                         )
                         Text(
                             text = app.label,
                             style = MaterialTheme.typography.bodyMedium
                         )
-                    }
-                }
             }
         }
+        }
+    }
+}
     }
 }
