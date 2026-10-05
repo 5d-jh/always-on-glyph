@@ -9,6 +9,10 @@ package com.jh.alwaysonglyph.renderer
  * displayed widget one step toward the first element, wrapping back to the
  * last. Elements can be removed from any position at any time. When the list
  * is empty, [StatusWidget.WEATHER] is shown.
+ *
+ * Long-pressing cycles through [rotation]: the priority array first, followed
+ * by the default widgets that are not currently in the array, wrapping back
+ * around.
  */
 open class PriorityList {
 
@@ -24,6 +28,14 @@ open class PriorityList {
     /** A snapshot of the priority array, highest priority last. */
     val list: List<StatusWidget>
         get() = entries.toList()
+
+    /**
+     * The full long-press rotation: the priority array (in priority order)
+     * followed by the default widgets not currently in the array. Never empty,
+     * falling back to [StatusWidgetModule.DEFAULT_ORDER] when the array is.
+     */
+    val rotation: List<StatusWidget>
+        get() = entries + StatusWidgetModule.DEFAULT_ORDER.filter { it !in entries }
 
     val isEmpty: Boolean
         get() = entries.isEmpty()
@@ -81,17 +93,21 @@ open class PriorityList {
 
     /**
      * Advances the displayed widget one step toward the first element of the
-     * array, wrapping back to the last element. Returns the newly displayed
-     * widget ([StatusWidget.WEATHER] when the array is empty).
+     * [rotation], wrapping back to the last element. The priority array is
+     * traversed first, then the default widgets outside the array. Returns the
+     * newly displayed widget ([StatusWidget.WEATHER] when the rotation is
+     * empty, which cannot happen in practice since it always contains the
+     * default order).
      */
     fun advance(): StatusWidget {
-        if (entries.isEmpty()) {
+        val rotation = rotation
+        if (rotation.isEmpty()) {
             currentWidget = null
             return StatusWidget.WEATHER
         }
-        val index = entries.indexOf(currentWidget).takeIf { it >= 0 } ?: entries.lastIndex
-        val next = if (index - 1 < 0) entries.lastIndex else index - 1
-        currentWidget = entries[next]
+        val index = rotation.indexOf(currentWidget).takeIf { it >= 0 } ?: rotation.lastIndex
+        val next = if (index - 1 < 0) rotation.lastIndex else index - 1
+        currentWidget = rotation[next]
         return currentWidget!!
     }
 }

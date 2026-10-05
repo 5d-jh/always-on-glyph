@@ -30,29 +30,63 @@ class WidgetPriorityTest {
     }
 
     @Test
-    fun advanceCyclesFromLastToFirstAndWraps() {
+    fun advanceCyclesThroughArrayThenOutsideAndWraps() {
         val priority = PriorityList()
-        priority.push(StatusWidget.NOTIFICATION)
+        priority.push(StatusWidget.BATTERY)
+        priority.push(StatusWidget.WATTAGE)
+
+        assertEquals(StatusWidget.WATTAGE, priority.current)
+        assertEquals(StatusWidget.BATTERY, priority.advance())
+        assertEquals(StatusWidget.WEATHER, priority.advance())
+        assertEquals(StatusWidget.TEMPERATURE, priority.advance())
+        assertEquals(StatusWidget.NOTIFICATION, priority.advance())
+        assertEquals(StatusWidget.WATTAGE, priority.advance())
+    }
+
+    @Test
+    fun advanceOnSingleElementGoesOutsideAndWrapsBack() {
+        val priority = PriorityList()
         priority.push(StatusWidget.BATTERY)
 
         assertEquals(StatusWidget.BATTERY, priority.current)
+        assertEquals(StatusWidget.WEATHER, priority.advance())
+        assertEquals(StatusWidget.TEMPERATURE, priority.advance())
         assertEquals(StatusWidget.NOTIFICATION, priority.advance())
         assertEquals(StatusWidget.BATTERY, priority.advance())
     }
 
     @Test
-    fun advanceOnSingleElementStaysOnIt() {
+    fun advanceOnEmptyCyclesDefaultOrder() {
         val priority = PriorityList()
-        priority.push(StatusWidget.BATTERY)
+        assertEquals(StatusWidget.WEATHER, priority.current)
+        assertEquals(StatusWidget.TEMPERATURE, priority.advance())
         assertEquals(StatusWidget.BATTERY, priority.advance())
-        assertEquals(StatusWidget.BATTERY, priority.current)
+        assertEquals(StatusWidget.NOTIFICATION, priority.advance())
+        assertEquals(StatusWidget.WEATHER, priority.advance())
     }
 
     @Test
-    fun advanceOnEmptyReturnsWeather() {
+    fun rotationPlacesArrayFirstThenOutside() {
         val priority = PriorityList()
-        assertEquals(StatusWidget.WEATHER, priority.advance())
-        assertEquals(StatusWidget.WEATHER, priority.current)
+        priority.push(StatusWidget.WATTAGE)
+        priority.push(StatusWidget.BATTERY)
+
+        assertEquals(
+            listOf(
+                StatusWidget.WATTAGE,
+                StatusWidget.BATTERY,
+                StatusWidget.NOTIFICATION,
+                StatusWidget.TEMPERATURE,
+                StatusWidget.WEATHER,
+            ),
+            priority.rotation
+        )
+    }
+
+    @Test
+    fun rotationFallsBackToDefaultOrderWhenEmpty() {
+        val priority = PriorityList()
+        assertEquals(StatusWidgetModule.DEFAULT_ORDER, priority.rotation)
     }
 
     @Test

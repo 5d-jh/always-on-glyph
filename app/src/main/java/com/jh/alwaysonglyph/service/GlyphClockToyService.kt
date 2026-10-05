@@ -70,7 +70,8 @@ class GlyphClockToyService : Service() {
         override fun run() {
             minuteDotOn = !minuteDotOn
             updateMatrixDisplay()
-            blinkHandler.postDelayed(this, MINUTE_DOT_BLINK_INTERVAL_MS)
+            val delay = if (minuteDotOn) MINUTE_DOT_ON_MS else MINUTE_DOT_OFF_MS
+            blinkHandler.postDelayed(this, delay)
         }
     }
 
@@ -245,7 +246,7 @@ class GlyphClockToyService : Service() {
         }
         blinkHandler.removeCallbacks(minuteDotBlinkRunnable)
         minuteDotOn = true
-        blinkHandler.postDelayed(minuteDotBlinkRunnable, MINUTE_DOT_BLINK_INTERVAL_MS)
+        blinkHandler.postDelayed(minuteDotBlinkRunnable, MINUTE_DOT_ON_MS)
     }
 
     private fun stopMinuteDotBlink() {
@@ -341,7 +342,7 @@ class GlyphClockToyService : Service() {
                 ClockPreferences.getStatusWidget(applicationContext)
             }
             val widgets = if (priorityEnabled) {
-                WidgetPriority.list.ifEmpty { StatusWidgetModule.DEFAULT_ORDER }
+                WidgetPriority.rotation
             } else {
                 ClockPreferences.getActiveWidgets(applicationContext)
             }
@@ -390,6 +391,7 @@ class GlyphClockToyService : Service() {
     companion object {
         private const val TAG = "GlyphClockToyService"
         private const val WEATHER_REFRESH_INTERVAL_MS = 30 * 60 * 1000L
-        private const val MINUTE_DOT_BLINK_INTERVAL_MS = 3 * 1000L
+        private const val MINUTE_DOT_ON_MS = 2 * 1000L
+        private const val MINUTE_DOT_OFF_MS = 1 * 1000L
     }
 }
