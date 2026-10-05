@@ -209,7 +209,7 @@ object MatrixCanvasRenderer {
             '·' to arrayOf("   ", "   ", " # ", "   ", "   "),
             '°' to arrayOf(" # ", "# #", " # ", "   ", "   "),
             '-' to arrayOf("   ", "   ", "###", "   ", "   "),
-            'W' to arrayOf("# #", "# #", "###", "# #", "# #")
+            'W' to arrayOf("# #", "# #", "###","   ", "   ")
         )
     )
 

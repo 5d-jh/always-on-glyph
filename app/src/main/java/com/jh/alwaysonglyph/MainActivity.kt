@@ -717,6 +717,23 @@ fun GlyphClockHomeScreen() {
                     )
                 }
             }
+
+            item {
+                Text(
+                    text = stringResource(R.string.open_source_licenses),
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = MaterialTheme.colorScheme.primary,
+                    textAlign = androidx.compose.ui.text.style.TextAlign.Center,
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .clickable {
+                            context.startActivity(
+                                Intent(context, OpenSourceLicensesActivity::class.java)
+                            )
+                        }
+                        .padding(vertical = 24.dp)
+                )
+            }
         }
         }
     }

@@ -50,6 +50,12 @@
             android:label="@string/notification_apps_title"
             android:theme="@style/Theme.AlwaysOnGlyph" />
 
+        <activity
+            android:name=".OpenSourceLicensesActivity"
+            android:exported="false"
+            android:label="@string/open_source_licenses"
+            android:theme="@style/Theme.AlwaysOnGlyph" />
+
         <!-- Glyph Toy Service for Nothing OS Flip-to-Glyph Matrix -->
         <service
             android:name=".service.GlyphClockToyService"

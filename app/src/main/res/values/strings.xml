@@ -65,4 +65,7 @@
     <string name="location_permission_title">Location permission not granted</string>
     <string name="location_permission_message">Location permission is required to show the current temperature. Approximate location is sufficient. Location coordinates are sent to the weather provider Open-Meteo (api.open-meteo.com); without permission, IP-based location lookup (ipwho.is) may be used instead.</string>
     <string name="grant_permission">Grant permission</string>
+
+    <!-- Open source licenses -->
+    <string name="open_source_licenses">Open source licenses</string>
 </resources>
