@@ -5,6 +5,7 @@ import android.content.Context
 import android.provider.Settings
 import android.service.notification.NotificationListenerService
 import android.service.notification.StatusBarNotification
+import com.jh.alwaysonglyph.prefs.ClockPreferences
 import com.jh.alwaysonglyph.renderer.StatusWidget
 import com.jh.alwaysonglyph.renderer.WidgetPriority
 import java.util.concurrent.atomic.AtomicInteger
@@ -44,10 +45,13 @@ class UnreadNotificationListenerService : NotificationListenerService() {
     private fun updateUnreadCount() {
         try {
             val activeNotifs = activeNotifications ?: emptyArray()
+            val filterEnabled = ClockPreferences.isNotificationFilterEnabled(this)
+            val selectedApps = if (filterEnabled) ClockPreferences.getSelectedNotificationApps(this) else null
             val count = activeNotifs.count { sbn ->
                 val flags = sbn.notification?.flags ?: 0
                 val isOngoing = (flags and Notification.FLAG_ONGOING_EVENT) != 0
-                !sbn.isClearable.not() && !isOngoing
+                val isUnread = !sbn.isClearable.not() && !isOngoing
+                isUnread && (selectedApps == null || sbn.packageName in selectedApps)
             }
             unreadCount.set(count)
         } catch (e: Exception) {

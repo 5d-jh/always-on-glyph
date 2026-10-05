@@ -51,6 +51,12 @@
     <string name="weather_tooltip_desc">Location data usage info</string>
     <string name="notification_permission_title">Notification access not granted</string>
     <string name="notification_permission_message">Allow notification access to show the unread notification count.</string>
+    <string name="notification_subsettings_title">Notification options</string>
+    <string name="notification_filter_label">Count only selected apps</string>
+    <string name="notification_filter_desc">Only unread notifications from the apps you select are counted.</string>
+    <string name="notification_filter_empty">No apps selected. Nothing will be counted.</string>
+    <string name="notification_apps_title">Select apps</string>
+    <string name="notification_apps_search">Search apps</string>
     <string name="location_permission_title">Location permission not granted</string>
     <string name="location_permission_message">Location permission is required to show the current temperature. Approximate location is sufficient. Location coordinates are sent to the weather provider Open-Meteo (api.open-meteo.com); without permission, IP-based location lookup (ipwho.is) may be used instead.</string>
     <string name="grant_permission">Grant permission</string>

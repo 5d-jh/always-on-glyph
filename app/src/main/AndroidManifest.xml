@@ -9,6 +9,13 @@
     <uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION" />
     <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION" />
 
+    <queries>
+        <intent>
+            <action android:name="android.intent.action.MAIN" />
+            <category android:name="android.intent.category.LAUNCHER" />
+        </intent>
+    </queries>
+
     <application
         android:allowBackup="true"
         android:dataExtractionRules="@xml/data_extraction_rules"
@@ -35,6 +42,12 @@
             android:name=".EditWidgetsActivity"
             android:exported="false"
             android:label="@string/widgets_title"
+            android:theme="@style/Theme.AlwaysOnGlyph" />
+
+        <activity
+            android:name=".NotificationAppsActivity"
+            android:exported="false"
+            android:label="@string/notification_apps_title"
             android:theme="@style/Theme.AlwaysOnGlyph" />
 
         <!-- Glyph Toy Service for Nothing OS Flip-to-Glyph Matrix -->

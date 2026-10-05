@@ -13,6 +13,7 @@ import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
@@ -32,6 +33,7 @@ import androidx.compose.material3.Button
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
@@ -44,6 +46,7 @@ import androidx.compose.material3.TooltipBox
 import androidx.compose.material3.TooltipDefaults
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
+import androidx.compose.material3.VerticalDivider
 import androidx.compose.material3.rememberTooltipState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
@@ -137,6 +140,68 @@ private fun PermissionAlertCard(
     }
 }
 
+@Composable
+private fun NotificationSubSettings(
+    filterEnabled: Boolean,
+    onFilterEnabledChange: (Boolean) -> Unit,
+    selectedApps: Set<String>,
+) {
+    val context = LocalContext.current
+    HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant)
+    Column(modifier = Modifier.padding(horizontal = 16.dp, vertical = 12.dp)) {
+        Text(
+            text = stringResource(R.string.notification_subsettings_title),
+            style = MaterialTheme.typography.titleSmall,
+            fontWeight = FontWeight.Bold,
+            color = MaterialTheme.colorScheme.primary
+        )
+        Spacer(modifier = Modifier.height(8.dp))
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Column(
+                modifier = Modifier
+                    .weight(1f)
+                    .clickable {
+                        context.startActivity(
+                            Intent(context, NotificationAppsActivity::class.java)
+                        )
+                    }
+            ) {
+                Text(
+                    text = stringResource(R.string.notification_filter_label),
+                    style = MaterialTheme.typography.titleMedium,
+                    fontWeight = FontWeight.Bold
+                )
+                Text(
+                    text = stringResource(R.string.notification_filter_desc),
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+            }
+            VerticalDivider(
+                modifier = Modifier
+                    .height(48.dp)
+                    .padding(horizontal = 16.dp)
+            )
+            Switch(
+                checked = filterEnabled,
+                onCheckedChange = onFilterEnabledChange
+            )
+        }
+
+        if (filterEnabled && selectedApps.isEmpty()) {
+            Spacer(modifier = Modifier.height(8.dp))
+            Text(
+                text = stringResource(R.string.notification_filter_empty),
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.error
+            )
+        }
+    }
+}
+
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun EditWidgetsScreen() {
@@ -144,6 +209,8 @@ fun EditWidgetsScreen() {
     val activity = context as? Activity
 
     var enabled by remember { mutableStateOf(ClockPreferences.getEnabledWidgets(context)) }
+    var notificationFilterEnabled by remember { mutableStateOf(ClockPreferences.isNotificationFilterEnabled(context)) }
+    var selectedNotificationApps by remember { mutableStateOf(ClockPreferences.getSelectedNotificationApps(context)) }
     var priorityEnabled by remember { mutableStateOf(ClockPreferences.isPriorityEnabled(context)) }
     var notificationGranted by remember {
         mutableStateOf(NotificationAccess.isAccessGranted(context))
@@ -164,6 +231,7 @@ fun EditWidgetsScreen() {
             if (event == Lifecycle.Event.ON_RESUME) {
                 notificationGranted = NotificationAccess.isAccessGranted(context)
                 locationGranted = WeatherRepository.hasLocationPermission(context)
+                selectedNotificationApps = ClockPreferences.getSelectedNotificationApps(context)
             }
         }
         lifecycleOwner.lifecycle.addObserver(observer)
@@ -352,6 +420,17 @@ fun EditWidgetsScreen() {
                                             locationPermissionLauncher.launch(permissions.toTypedArray())
                                         }
                                     }
+                                )
+                            }
+
+                            if (widget == StatusWidget.NOTIFICATION && included) {
+                                NotificationSubSettings(
+                                    filterEnabled = notificationFilterEnabled,
+                                    onFilterEnabledChange = { checked ->
+                                        notificationFilterEnabled = checked
+                                        ClockPreferences.setNotificationFilterEnabled(context, checked)
+                                    },
+                                    selectedApps = selectedNotificationApps
                                 )
                             }
                         }

@@ -51,6 +51,12 @@
     <string name="weather_tooltip_desc">위치 데이터 사용 안내</string>
     <string name="notification_permission_title">알림 접근 권한이 없습니다</string>
     <string name="notification_permission_message">읽지 않은 알림 개수를 표시하려면 알림 접근 권한을 허용해 주세요.</string>
+    <string name="notification_subsettings_title">알림 옵션</string>
+    <string name="notification_filter_label">선택한 앱만 카운트</string>
+    <string name="notification_filter_desc">선택한 앱의 읽지 않은 알림만 개수에 포함됩니다.</string>
+    <string name="notification_filter_empty">선택한 앱이 없습니다. 아무것도 카운트되지 않습니다.</string>
+    <string name="notification_apps_title">앱 선택</string>
+    <string name="notification_apps_search">앱 검색</string>
     <string name="location_permission_title">위치 권한이 없습니다</string>
     <string name="location_permission_message">현재 위치의 기온을 표시하려면 위치 권한이 필요합니다. 대략적인 위치만 허용해도 충분합니다. 위치 좌표는 기상 정보 제공 업체 Open-Meteo(api.open-meteo.com)로 전송되며, 권한이 없으면 IP 기반 위치 조회(ipwho.is)가 대신 사용될 수 있습니다.</string>
     <string name="grant_permission">권한 허용</string>

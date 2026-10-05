@@ -19,6 +19,8 @@ object ClockPreferences {
     private const val KEY_TURN_OFF_ON_WAKE = "turn_off_on_wake"
     private const val KEY_ENABLED_WIDGETS = "enabled_widgets"
     private const val KEY_PRIORITY_ENABLED = "priority_enabled"
+    private const val KEY_NOTIFICATION_FILTER_ENABLED = "notification_filter_enabled"
+    private const val KEY_NOTIFICATION_APPS = "notification_apps"
 
     private const val DEFAULT_BRIGHTNESS = 200
     private const val DEFAULT_DISABLE_START_MINUTES = 22 * 60
@@ -85,6 +87,26 @@ object ClockPreferences {
 
     fun setPriorityEnabled(context: Context, enabled: Boolean) {
         prefs(context).edit().putBoolean(KEY_PRIORITY_ENABLED, enabled).apply()
+    }
+
+    /**
+     * Whether the notification widget only counts unread notifications from a
+     * user-selected set of apps. When false, all clearable, non-ongoing
+     * notifications are counted.
+     */
+    fun isNotificationFilterEnabled(context: Context): Boolean =
+        prefs(context).getBoolean(KEY_NOTIFICATION_FILTER_ENABLED, false)
+
+    fun setNotificationFilterEnabled(context: Context, enabled: Boolean) {
+        prefs(context).edit().putBoolean(KEY_NOTIFICATION_FILTER_ENABLED, enabled).apply()
+    }
+
+    /** The set of package names whose unread notifications are counted. */
+    fun getSelectedNotificationApps(context: Context): Set<String> =
+        prefs(context).getStringSet(KEY_NOTIFICATION_APPS, emptySet())?.toSet() ?: emptySet()
+
+    fun setSelectedNotificationApps(context: Context, apps: Set<String>) {
+        prefs(context).edit().putStringSet(KEY_NOTIFICATION_APPS, apps).apply()
     }
 
     /**
