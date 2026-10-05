@@ -1,5 +1,6 @@
 package com.jh.alwaysonglyph.service
 
+import android.app.NotificationManager
 import android.app.Service
 import android.content.BroadcastReceiver
 import android.content.ComponentName
@@ -94,17 +95,25 @@ class GlyphClockToyService : Service() {
         }
     }
 
+    private val interruptionFilterReceiver = object : BroadcastReceiver() {
+        override fun onReceive(context: Context?, intent: Intent?) {
+            refreshAod()
+        }
+    }
+
     override fun onCreate() {
         super.onCreate()
         WeatherRepository.loadCache(applicationContext)
         registerScreenStateReceiver()
         registerPowerStateReceiver()
+        registerInterruptionFilterReceiver()
     }
 
     override fun onDestroy() {
         weatherHandler.removeCallbacks(weatherRefreshRunnable)
         unregisterScreenStateReceiver()
         unregisterPowerStateReceiver()
+        unregisterInterruptionFilterReceiver()
         super.onDestroy()
     }
 
@@ -162,11 +171,27 @@ class GlyphClockToyService : Service() {
         }
     }
 
+    private fun registerInterruptionFilterReceiver() {
+        val filter = IntentFilter(NotificationManager.ACTION_INTERRUPTION_FILTER_CHANGED)
+        registerReceiver(interruptionFilterReceiver, filter, Context.RECEIVER_NOT_EXPORTED)
+        Log.d(TAG, "Interruption filter receiver registered")
+    }
+
+    private fun unregisterInterruptionFilterReceiver() {
+        try {
+            unregisterReceiver(interruptionFilterReceiver)
+        } catch (e: Exception) {
+            Log.e(TAG, "Error unregistering interruption filter receiver", e)
+        }
+    }
+
     private fun syncChargingPriority() {
         if (BatteryStateReceiver.isCharging(applicationContext)) {
             WidgetPriority.push(StatusWidget.BATTERY)
+            WidgetPriority.push(StatusWidget.WATTAGE)
         } else {
             WidgetPriority.remove(StatusWidget.BATTERY)
+            WidgetPriority.remove(StatusWidget.WATTAGE)
         }
     }
 
@@ -196,12 +221,21 @@ class GlyphClockToyService : Service() {
     }
 
     private fun isAodDisabledNow(): Boolean {
+        if (ClockPreferences.isAodDisabledOnDndEnabled(applicationContext) && isDndActive()) {
+            return true
+        }
         if (!ClockPreferences.isAodDisabledEnabled(applicationContext)) return false
         val now = LocalTime.now()
         val nowMinutes = now.hour * 60 + now.minute
         val start = ClockPreferences.getAodDisabledStartMinutes(applicationContext)
         val end = ClockPreferences.getAodDisabledEndMinutes(applicationContext)
         return ClockPreferences.isAodDisabledAt(nowMinutes, start, end)
+    }
+
+    private fun isDndActive(): Boolean {
+        val manager = getSystemService(Context.NOTIFICATION_SERVICE) as? NotificationManager
+            ?: return false
+        return manager.currentInterruptionFilter != NotificationManager.INTERRUPTION_FILTER_ALL
     }
 
     private fun initGlyphManager() {
@@ -261,6 +295,7 @@ class GlyphClockToyService : Service() {
             val time = LocalTime.now()
             val batteryLevel = BatteryStateReceiver.getBatteryPercentage(applicationContext)
             val temperature = BatteryStateReceiver.getTemperatureCelsius(applicationContext)
+            val wattage = BatteryStateReceiver.getWattage(applicationContext)
             val unreadCount = NotificationAccess.getUnreadCount()
             val weatherCelsius = WeatherRepository.currentTemperatureCelsius()
 
@@ -273,7 +308,7 @@ class GlyphClockToyService : Service() {
                 ClockPreferences.getStatusWidget(applicationContext)
             }
             val widgets = if (priorityEnabled) {
-                StatusWidgetModule.DEFAULT_ORDER
+                WidgetPriority.list.ifEmpty { StatusWidgetModule.DEFAULT_ORDER }
             } else {
                 ClockPreferences.getActiveWidgets(applicationContext)
             }
@@ -281,7 +316,8 @@ class GlyphClockToyService : Service() {
                 batteryLevel = batteryLevel,
                 temperatureCelsius = temperature,
                 weatherCelsius = weatherCelsius,
-                unreadNotifications = unreadCount
+                unreadNotifications = unreadCount,
+                wattage = wattage
             )
             val bitmap = when (style) {
                 ClockStyle.DIGITAL -> MatrixCanvasRenderer.renderFrame(
@@ -311,7 +347,7 @@ class GlyphClockToyService : Service() {
                 .build(applicationContext)
 
             manager.setMatrixFrame(frame)
-            Log.d(TAG, "Updated matrix display successfully: time=$time, batt=$batteryLevel%, temp=${temperature}C, weather=${weatherCelsius}C, unread=$unreadCount")
+            Log.d(TAG, "Updated matrix display successfully: time=$time, batt=$batteryLevel%, watt=$wattage, temp=${temperature}C, weather=${weatherCelsius}C, unread=$unreadCount")
         } catch (e: Exception) {
             Log.e(TAG, "Failed to update matrix display", e)
         }

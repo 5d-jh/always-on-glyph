@@ -97,6 +97,8 @@ class MatrixCanvasRendererTest {
         assertEquals("21°", StatusWidgetModule.text(StatusWidget.WEATHER, data))
         assertEquals("--°", StatusWidgetModule.text(StatusWidget.WEATHER, data.copy(weatherCelsius = null)))
         assertEquals("·3", StatusWidgetModule.text(StatusWidget.NOTIFICATION, data))
+        assertEquals("15W", StatusWidgetModule.text(StatusWidget.WATTAGE, data.copy(wattage = 15)))
+        assertEquals("0W", StatusWidgetModule.text(StatusWidget.WATTAGE, data))
     }
 
     @Test

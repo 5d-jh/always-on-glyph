@@ -103,6 +103,7 @@ private data class SavedSettings(
     val disableEndMinutes: Int,
     val clockStyle: ClockStyle,
     val turnOffOnWake: Boolean,
+    val turnOffOnDnd: Boolean,
 )
 
 @Composable
@@ -189,6 +190,7 @@ fun GlyphClockHomeScreen() {
                 disableEndMinutes = ClockPreferences.getAodDisabledEndMinutes(context),
                 clockStyle = ClockPreferences.getClockStyle(context),
                 turnOffOnWake = ClockPreferences.isTurnOffOnWakeEnabled(context),
+                turnOffOnDnd = ClockPreferences.isAodDisabledOnDndEnabled(context),
             )
         )
     }
@@ -200,6 +202,7 @@ fun GlyphClockHomeScreen() {
     var disableEndMinutes by remember { mutableStateOf(saved.disableEndMinutes) }
     var clockStyle by remember { mutableStateOf(saved.clockStyle) }
     var turnOffOnWake by remember { mutableStateOf(saved.turnOffOnWake) }
+    var turnOffOnDnd by remember { mutableStateOf(saved.turnOffOnDnd) }
     var showStartPicker by remember { mutableStateOf(false) }
     var showEndPicker by remember { mutableStateOf(false) }
 
@@ -213,6 +216,7 @@ fun GlyphClockHomeScreen() {
         ClockPreferences.setAodDisabledEndMinutes(context, disableEndMinutes)
         ClockPreferences.setClockStyle(context, clockStyle)
         ClockPreferences.setTurnOffOnWakeEnabled(context, turnOffOnWake)
+        ClockPreferences.setAodDisabledOnDndEnabled(context, turnOffOnDnd)
 
         saved = SavedSettings(
             use24Hour = use24Hour,
@@ -222,6 +226,7 @@ fun GlyphClockHomeScreen() {
             disableEndMinutes = disableEndMinutes,
             clockStyle = clockStyle,
             turnOffOnWake = turnOffOnWake,
+            turnOffOnDnd = turnOffOnDnd,
         )
         isDirty = false
     }
@@ -234,6 +239,7 @@ fun GlyphClockHomeScreen() {
         disableEndMinutes = saved.disableEndMinutes
         clockStyle = saved.clockStyle
         turnOffOnWake = saved.turnOffOnWake
+        turnOffOnDnd = saved.turnOffOnDnd
         isDirty = false
     }
 
@@ -495,6 +501,34 @@ fun GlyphClockHomeScreen() {
                                 checked = turnOffOnWake,
                                 onCheckedChange = { checked ->
                                     turnOffOnWake = checked
+                                    isDirty = true
+                                }
+                            )
+                        }
+                    )
+
+                    CardDivider()
+
+                    ListItem(
+                        colors = ListItemDefaults.colors(containerColor = Color.Transparent),
+                        headlineContent = {
+                            Text(
+                                text = stringResource(R.string.disable_on_dnd_label),
+                                style = MaterialTheme.typography.titleMedium
+                            )
+                        },
+                        supportingContent = {
+                            Text(
+                                text = stringResource(R.string.disable_on_dnd_hint),
+                                style = MaterialTheme.typography.bodyMedium,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant
+                            )
+                        },
+                        trailingContent = {
+                            Switch(
+                                checked = turnOffOnDnd,
+                                onCheckedChange = { checked ->
+                                    turnOffOnDnd = checked
                                     isDirty = true
                                 }
                             )

@@ -4,6 +4,7 @@ import android.content.Context
 import android.content.Intent
 import android.content.IntentFilter
 import android.os.BatteryManager
+import kotlin.math.abs
 import kotlin.math.roundToInt
 
 object BatteryStateReceiver {
@@ -45,5 +46,31 @@ object BatteryStateReceiver {
         }
         val plugged = batteryStatus?.getIntExtra(BatteryManager.EXTRA_PLUGGED, 0) ?: 0
         return plugged != 0
+    }
+
+    /**
+     * Instantaneous charging power in watts (voltage × current). Voltage comes
+     * from the sticky battery status ([BatteryManager.EXTRA_VOLTAGE], in mV);
+     * current from [BatteryManager.getIntProperty] with
+     * [BatteryManager.BATTERY_PROPERTY_CURRENT_NOW] (in µA, negative while
+     * discharging). Returns 0 when either value is unavailable.
+     */
+    fun getWattage(context: Context): Int {
+        val batteryStatus: Intent? = IntentFilter(Intent.ACTION_BATTERY_CHANGED).let { filter ->
+            context.registerReceiver(null, filter)
+        }
+        val voltageMv = batteryStatus?.getIntExtra(BatteryManager.EXTRA_VOLTAGE, -1) ?: -1
+        if (voltageMv <= 0) return 0
+
+        val currentUa = try {
+            val manager = context.getSystemService(Context.BATTERY_SERVICE) as? BatteryManager
+            manager?.getIntProperty(BatteryManager.BATTERY_PROPERTY_CURRENT_NOW) ?: 0
+        } catch (e: Exception) {
+            0
+        }
+        if (currentUa == 0) return 0
+
+        val watts = (abs(currentUa) / 1_000_000.0) * (voltageMv / 1000.0)
+        return watts.roundToInt()
     }
 }

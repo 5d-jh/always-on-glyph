@@ -10,6 +10,7 @@ fun StatusWidget.displayName(context: Context): String = context.getString(
     when (this) {
         StatusWidget.NOTIFICATION -> R.string.widget_notification
         StatusWidget.BATTERY -> R.string.widget_battery
+        StatusWidget.WATTAGE -> R.string.widget_wattage
         StatusWidget.TEMPERATURE -> R.string.widget_temperature
         StatusWidget.WEATHER -> R.string.widget_weather
     }
@@ -22,6 +23,7 @@ fun StatusWidget.description(context: Context): String = context.getString(
     when (this) {
         StatusWidget.NOTIFICATION -> R.string.widget_notification_desc
         StatusWidget.BATTERY -> R.string.widget_battery_desc
+        StatusWidget.WATTAGE -> R.string.widget_wattage_desc
         StatusWidget.TEMPERATURE -> R.string.widget_temperature_desc
         StatusWidget.WEATHER -> R.string.widget_weather_desc
     }
@@ -35,7 +37,7 @@ fun StatusWidget.description(context: Context): String = context.getString(
  * [StatusWidget.NOTIFICATION] is only shown while there are unread
  * notifications, regardless of its position in the configured order.
  */
-enum class StatusWidget { NOTIFICATION, BATTERY, TEMPERATURE, WEATHER }
+enum class StatusWidget { NOTIFICATION, BATTERY, WATTAGE, TEMPERATURE, WEATHER }
 
 /**
  * Snapshot of the live values a [StatusWidget] may render.
@@ -45,6 +47,7 @@ data class StatusData(
     val temperatureCelsius: Int = 25,
     val weatherCelsius: Int? = null,
     val unreadNotifications: Int = 0,
+    val wattage: Int = 0,
 )
 
 /**
@@ -66,6 +69,7 @@ object StatusWidgetModule {
 
     fun text(widget: StatusWidget, data: StatusData): String = when (widget) {
         StatusWidget.BATTERY -> "${data.batteryLevel}%"
+        StatusWidget.WATTAGE -> "${data.wattage}W"
         StatusWidget.TEMPERATURE -> "${data.temperatureCelsius}°"
         StatusWidget.WEATHER -> data.weatherCelsius?.let { "${it}°" } ?: "--°"
         StatusWidget.NOTIFICATION -> "·${data.unreadNotifications}"

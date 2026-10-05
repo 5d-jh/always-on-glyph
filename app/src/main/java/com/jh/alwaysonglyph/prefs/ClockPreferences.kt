@@ -14,6 +14,7 @@ object ClockPreferences {
     private const val KEY_DISABLE_ENABLED = "disable_enabled"
     private const val KEY_DISABLE_START_MINUTES = "disable_start_minutes"
     private const val KEY_DISABLE_END_MINUTES = "disable_end_minutes"
+    private const val KEY_DISABLE_ON_DND = "disable_on_dnd"
     private const val KEY_CLOCK_STYLE = "clock_style"
     private const val KEY_STATUS_WIDGET = "status_widget"
     private const val KEY_TURN_OFF_ON_WAKE = "turn_off_on_wake"
@@ -126,6 +127,13 @@ object ClockPreferences {
 
     fun setTurnOffOnWakeEnabled(context: Context, enabled: Boolean) {
         prefs(context).edit().putBoolean(KEY_TURN_OFF_ON_WAKE, enabled).apply()
+    }
+
+    fun isAodDisabledOnDndEnabled(context: Context): Boolean =
+        prefs(context).getBoolean(KEY_DISABLE_ON_DND, false)
+
+    fun setAodDisabledOnDndEnabled(context: Context, enabled: Boolean) {
+        prefs(context).edit().putBoolean(KEY_DISABLE_ON_DND, enabled).apply()
     }
 
     fun getBrightness(context: Context): Int =
