@@ -102,11 +102,11 @@ object MatrixCanvasRenderer {
             '7' to arrayOf(
                 " ## ",
                 "   #",
-                "  # ",
+                "   #",
                 "    ",
-                " #  ",
-                " #  ",
-                " #  "
+                "  # ",
+                "  # ",
+                "  # "
             ),
             '8' to arrayOf(
                 " ## ",
@@ -206,10 +206,15 @@ object MatrixCanvasRenderer {
                 "  #",
                 "###"),
             '%' to arrayOf("# #", "  #", " # ", "#  ", "# #"),
-            '·' to arrayOf("   ", "   ", " # ", "   ", "   "),
+            '·' to arrayOf("   ", " # ", "# #", " # ", "   "),
             '°' to arrayOf(" # ", "# #", " # ", "   ", "   "),
             '-' to arrayOf("   ", "   ", "###", "   ", "   "),
-            'W' to arrayOf("# #", "# #", "###","   ", "   ")
+            'W' to arrayOf(
+                "# # #",
+                "# # #",
+                " # # ",
+                "    ",
+                "    ")
         )
     )
 
@@ -257,7 +262,8 @@ object MatrixCanvasRenderer {
         use24Hour: Boolean = true,
         widget: StatusWidget = StatusWidget.BATTERY,
         data: StatusData = StatusData(),
-        widgets: List<StatusWidget> = StatusWidgetModule.DEFAULT_ORDER
+        widgets: List<StatusWidget> = StatusWidgetModule.DEFAULT_ORDER,
+        showMinuteDot: Boolean = true
     ): Bitmap {
         val bitmap = Bitmap.createBitmap(25, 25, Bitmap.Config.ARGB_8888)
         bitmap.eraseColor(Color.BLACK)
@@ -276,9 +282,11 @@ object MatrixCanvasRenderer {
             }
         }
 
-        // 2. Minute dot on the edge
-        val (mdx, mdy) = pointOnRing(cx, cy, 12, time.minute)
-        setPixel(bitmap, mdx, mdy, Color.WHITE)
+        // 2. Minute dot on the edge (blinks on/off every 3s)
+        if (showMinuteDot) {
+            val (mdx, mdy) = pointOnRing(cx, cy, 12, time.minute)
+            setPixel(bitmap, mdx, mdy, Color.WHITE)
+        }
 
         // 3. Hour (HH), horizontally centered
         val hour = if (use24Hour) {

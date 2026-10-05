@@ -63,6 +63,17 @@ class GlyphClockToyService : Service() {
 
     private val serviceMessenger = Messenger(serviceHandler)
 
+    private val blinkHandler = Handler(Looper.getMainLooper())
+    private var minuteDotOn = true
+
+    private val minuteDotBlinkRunnable = object : Runnable {
+        override fun run() {
+            minuteDotOn = !minuteDotOn
+            updateMatrixDisplay()
+            blinkHandler.postDelayed(this, MINUTE_DOT_BLINK_INTERVAL_MS)
+        }
+    }
+
     private val weatherHandler = Handler(Looper.getMainLooper())
     private val weatherRefreshRunnable = object : Runnable {
         override fun run() {
@@ -110,6 +121,7 @@ class GlyphClockToyService : Service() {
     }
 
     override fun onDestroy() {
+        stopMinuteDotBlink()
         weatherHandler.removeCallbacks(weatherRefreshRunnable)
         unregisterScreenStateReceiver()
         unregisterPowerStateReceiver()
@@ -125,6 +137,7 @@ class GlyphClockToyService : Service() {
 
     override fun onUnbind(intent: Intent?): Boolean {
         Log.d(TAG, "onUnbind called")
+        stopMinuteDotBlink()
         try {
             turnOffMatrix()
             glyphMatrixManager?.unInit()
@@ -212,12 +225,32 @@ class GlyphClockToyService : Service() {
     }
 
     private fun refreshAod() {
-        if (isScreenInteractive()) return
+        if (isScreenInteractive()) {
+            stopMinuteDotBlink()
+            return
+        }
         if (isAodDisabledNow()) {
+            stopMinuteDotBlink()
             turnOffMatrix()
         } else {
             updateMatrixDisplay()
+            startMinuteDotBlink()
         }
+    }
+
+    private fun startMinuteDotBlink() {
+        if (ClockPreferences.getClockStyle(applicationContext) != ClockStyle.ANALOG) {
+            stopMinuteDotBlink()
+            return
+        }
+        blinkHandler.removeCallbacks(minuteDotBlinkRunnable)
+        minuteDotOn = true
+        blinkHandler.postDelayed(minuteDotBlinkRunnable, MINUTE_DOT_BLINK_INTERVAL_MS)
+    }
+
+    private fun stopMinuteDotBlink() {
+        blinkHandler.removeCallbacks(minuteDotBlinkRunnable)
+        minuteDotOn = true
     }
 
     private fun isAodDisabledNow(): Boolean {
@@ -332,7 +365,8 @@ class GlyphClockToyService : Service() {
                     use24Hour = use24Hour,
                     widget = widget,
                     data = data,
-                    widgets = widgets
+                    widgets = widgets,
+                    showMinuteDot = minuteDotOn
                 )
             }
 
@@ -356,5 +390,6 @@ class GlyphClockToyService : Service() {
     companion object {
         private const val TAG = "GlyphClockToyService"
         private const val WEATHER_REFRESH_INTERVAL_MS = 30 * 60 * 1000L
+        private const val MINUTE_DOT_BLINK_INTERVAL_MS = 3 * 1000L
     }
 }
